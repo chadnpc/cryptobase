@@ -106,7 +106,7 @@ Describe "Module tests for $($([Environment]::GetEnvironmentVariable($env:RUN_ID
         $errors = $null
 
         if ($PSCmdlet.ParameterSetName -eq 'ByPath') {
-          Write-Host "        Checking $([IO.Path]::GetFileName($FilePath)) ..." -ForegroundColor DarkGray
+          Write-Host "        Checking $FilePath ..." -ForegroundColor DarkGray
           # The modern AST Parser can parse a file directly
           $null = [System.Management.Automation.Language.Parser]::ParseFile($FilePath, [ref]$tokens, [ref]$errors)
         } 
@@ -128,7 +128,7 @@ Describe "Module tests for $($([Environment]::GetEnvironmentVariable($env:RUN_ID
           }
         }
         else {
-          Write-Host "        No syntax errors found in $($FilePath)"
+          Write-Host "        No syntax errors found in $([IO.Path]::GetFileName($FilePath))"
         }
         return $errors
       }
