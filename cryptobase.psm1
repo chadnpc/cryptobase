@@ -1,0 +1,246 @@
+#!/usr/bin/env pwsh
+using namespace System
+using namespace System.IO
+using namespace System.Web
+using namespace System.Text
+using namespace System.Net.Http
+using namespace System.Security
+using namespace System.Reflection
+using namespace System.Globalization
+using namespace System.Reflection.Emit
+using namespace System.Runtime.Serialization
+using namespace System.Security.Cryptography
+using namespace System.Runtime.InteropServices
+using namespace System.Collections.ObjectModel
+
+# Load all sub-modules :
+# (Get-ChildItem ./Private).Name.ForEach({ "using module Private/" + $_ })
+
+using module Private/Enums.psm1
+using module Private/Exceptions.psm1
+using module Private/Utilities.psm1
+using module Private/Models.psm1
+using module Private/AesCCM.psm1
+using module Private/AesCfb.psm1
+using module Private/AesCmac.psm1
+using module Private/AesCng.psm1
+using module Private/AesCtr.psm1
+using module Private/AesGCM.psm1
+using module Private/AesOcb.psm1
+using module Private/AesSIV.psm1
+using module Private/Armor.psm1
+using module Private/BCrypt.psm1
+using module Private/Blake2b.psm1
+using module Private/ChaCha20.psm1
+using module Private/Crc24.psm1
+using module Private/Credentials.psm1
+using module Private/Curve25519.psm1
+using module Private/Ecdsa.psm1
+using module Private/EdwardsCurve.psm1
+using module Private/EllipticCurve.psm1
+using module Private/FileMonitor.psm1
+using module Private/Hc128.psm1
+using module Private/Hc256.psm1
+using module Private/Hkdf.psm1
+using module Private/KeypairGen.psm1
+using module Private/KMACAuth.psm1
+using module Private/MD5.psm1
+using module Private/opaque.psm1
+using module Private/OpenPgp.psm1
+using module Private/OTPKIT.psm1
+using module Private/PasswordHashing.psm1
+using module Private/Pbkdf2.psm1
+using module Private/PostQuantum.psm1
+using module Private/Rabbit.psm1
+using module Private/RSA.psm1
+using module Private/S2K.psm1
+using module Private/Secp256k1.psm1
+using module Private/Sha.psm1
+using module Private/TripleDES.psm1
+using module Private/Vault.psm1
+using module Private/X509.psm1
+using module Private/XChaCha20Poly1305.psm1
+using module Private/XOR.psm1
+using module Private/XSalsa20.psm1
+
+#Requires -PSEdition Core
+#Requires -Modules PsModuleBase, cliHelper.xconvert
+
+# Main class
+class CryptoBase : CryptobaseUtils {
+  CryptoBase() {}
+
+  static [byte[]] ProtectData([byte[]]$plaintext, [SecureString]$password) {
+    return [CryptoBase]::ProtectData($plaintext, $password, $null)
+  }
+
+  static [byte[]] ProtectData([byte[]]$plaintext, [string]$password) {
+    return [CryptoBase]::ProtectData($plaintext, $password, $null)
+  }
+
+  static [byte[]] ProtectData([byte[]]$plaintext, [string]$password, [byte[]]$aad) {
+    # Just use a SecureString
+    $ss = [System.Security.SecureString]::new()
+    $password.ToCharArray().ForEach({ $ss.AppendChar($_) })
+    return [CryptoBase]::ProtectData($plaintext, $ss, $aad)
+  }
+
+  static [byte[]] ProtectData([byte[]]$plaintext, [securestring]$password, [byte[]]$aad) {
+    $salt = [byte[]]::new(16)
+    $nonce = [byte[]]::new(12)
+    [RandomNumberGenerator]::Fill($salt)
+    [RandomNumberGenerator]::Fill($nonce)
+    $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
+    $key = [Pbkdf2]::DeriveKey($passBytes, $salt, 120000, 32, "SHA256")
+    $ciphertext = [byte[]]::new($plaintext.Length)
+    $tag = [byte[]]::new(16)
+    $aes = [System.Security.Cryptography.AesGcm]::new($key)
+    try {
+      $aes.Encrypt($nonce, $plaintext, $ciphertext, $tag, $aad)
+    }
+    finally {
+      $aes.Dispose()
+      [Array]::Clear($passBytes, 0, $passBytes.Length)
+      [Array]::Clear($key, 0, $key.Length)
+    }
+    # payload: version(1) + salt(16) + nonce(12) + tag(16) + ciphertext
+    return [byte[]]@(0x01) + $salt + $nonce + $tag + $ciphertext
+  }
+
+  static [byte[]] UnprotectData([byte[]]$protectedBytes, [securestring]$password) {
+    return [CryptoBase]::UnprotectData($protectedBytes, $password, $null)
+  }
+
+  static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$password) {
+    return [CryptoBase]::UnprotectData($protectedBytes, $password, $null)
+  }
+
+  static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$password, [byte[]]$aad) {
+    $ss = [System.Security.SecureString]::new()
+    $password.ToCharArray().ForEach({ $ss.AppendChar($_) })
+    return [CryptoBase]::UnprotectData($protectedBytes, $ss, $aad)
+  }
+
+  static [byte[]] UnprotectData([byte[]]$protectedBytes, [securestring]$password, [byte[]]$aad) {
+    if ($protectedBytes.Length -lt 45) { throw [ArgumentException]::new("Invalid protected payload.") }
+    if ($protectedBytes[0] -ne 0x01) { throw [ArgumentException]::new("Unsupported payload version.") }
+    $salt = [byte[]]::new(16); [Array]::Copy($protectedBytes, 1, $salt, 0, 16)
+    $nonce = [byte[]]::new(12); [Array]::Copy($protectedBytes, 17, $nonce, 0, 12)
+    $tag = [byte[]]::new(16); [Array]::Copy($protectedBytes, 29, $tag, 0, 16)
+    $cipherLen = $protectedBytes.Length - 45
+    $ciphertext = [byte[]]::new($cipherLen); [Array]::Copy($protectedBytes, 45, $ciphertext, 0, $cipherLen)
+    $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
+    $key = [Pbkdf2]::DeriveKey($passBytes, $salt, 120000, 32, "SHA256")
+    $plaintext = [byte[]]::new($cipherLen)
+    $aes = [System.Security.Cryptography.AesGcm]::new($key)
+    try {
+      $aes.Decrypt($nonce, $ciphertext, $tag, $plaintext, $aad)
+      return $plaintext
+    }
+    finally {
+      $aes.Dispose()
+      [Array]::Clear($passBytes, 0, $passBytes.Length)
+      [Array]::Clear($key, 0, $key.Length)
+    }
+  }
+
+  static [hashtable] SignMessage([byte[]]$data) {
+    $kp = [Secp256k1]::GenerateKeyPair()
+    $sig = [Secp256k1]::Sign($data, $kp.PrivateKey)
+    return @{ Signature = $sig; PublicKey = $kp.PublicKey; PrivateKey = $kp.PrivateKey }
+  }
+
+  static [bool] VerifyMessage([byte[]]$data, [byte[]]$signature, [byte[]]$publicKey) {
+    return [Secp256k1]::Verify($data, $signature, $publicKey)
+  }
+
+  static [void] ObfuscateFile([string]$inputPath, [string]$outputPath, [securestring]$password) {
+    $data = [File]::ReadAllBytes($inputPath)
+    $wrapped = [CryptoBase]::ProtectData($data, $password)
+    $fileCrc = [Crc24]::ComputeToBytes($wrapped)
+    [File]::WriteAllBytes($outputPath, $fileCrc + $wrapped)
+  }
+
+  static [void] DeobfuscateFile([string]$inputPath, [string]$outputPath, [securestring]$password) {
+    $blob = [File]::ReadAllBytes($inputPath)
+    if ($blob.Length -lt 4) { throw [ArgumentException]::new("Invalid obfuscated file.") }
+    $crc = $blob[0..2]
+    $payload = [byte[]]::new($blob.Length - 3)
+    [Array]::Copy($blob, 3, $payload, 0, $payload.Length)
+    if (![Crc24]::Verify($crc, $payload)) { throw [CryptographicException]::new("CRC24 verification failed.") }
+    $plain = [CryptoBase]::UnprotectData($payload, $password)
+    [File]::WriteAllBytes($outputPath, $plain)
+  }
+  static [string] ReadSecureString() {
+    [SecureString]$ss = Read-Host -AsSecureString
+    return [CryptoBase]::SecureStringToString($ss)
+  }
+
+  static [string] SecureStringToString([SecureString]$secureString) {
+    [SecureString]$ss = $secureString.Copy(); $result = [string]::Empty
+    $mdp = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss)
+    try {
+      $result = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($mdp)
+    }
+    finally {
+      [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($mdp)
+      $ss.Dispose()
+    }
+    return $result
+  }
+}
+
+# Types that will be available to users when they import the module.
+# Hint: To automatically generate typestoexport variable you can use this one liner to generate types to export variable
+# (Get-ChildItem *.psm1 -Recurse -File | ForEach-Object { [IO.File]::ReadAllLines((Get-Item $_.FullName)).Where({ $_.StartsWith("class") -or $_.StartsWith("enum ") }).ForEach({ $_.Replace("class ", '[').Replace("enum ", '[') }).ForEach({ ($_ -like "* : *") ? $_.split(" : ")[0] + ']' : $_.Replace(' {', ']') }) }) -join ', '
+
+$typestoExport = @(
+  [AesCCM], [AesCfb], [AesCmac], [AesCng], [AesCtr], [AesGCM], [AesOcbCore], [AesOcb], [AesSIV], [ArmorDecodeResult], [Armor], [BCryptCore], [BCrypt], [BCryptExtendedV3], [Blake2b], [ChaCha20Poly1305], [Crc24], [CredManaged], [NativeCredential], [CredentialManager], [Curve25519], [Ecdsa], [Ed25519Impl], [Ed25519], [Ed448], [ECC],
+  [EncryptionScope], [keyStoreMode], [KeyExportPolicy], [KeyProtection], [KeyUsage], [X509ContentType], [ECCurveName], [SdCategory], [ExpType], [CertStoreName], [CryptoAlgorithm], [RSAPadding], [Compression], [CredFlags], [CredType], [CredentialPersistence], [HashType], [AsymmetricAlgorithm], [KeyFormat], [KeySize], [ArmorType],
+  [InvalidArgumentException], [CredentialNotFoundException], [IntegrityCheckFailedException], [InvalidPasswordException], [SaltParseException], [BcryptAuthenticationException], [HashInformationException], [KeypairException], [KeyGenerationException], [KeyImportException], [FileMonitor], [Hc128], [Hc256], [HKDF], [Keypair],
+  [NamedKeypair], [KeypairGenerationResult], [KeypairHelper], [KeypairGen], [KeypairManager], [KMAC256], [MD5], [Expiration], [HashParser], [HashInformation], [HashFormatDescriptor], [CipherObject], [SecretStore], [KSFConfigType], [opaqueServerLoginState], [opaqueClientRegistrationState], [opaqueClientLoginState], [opaqueKSFConfig],
+  [opaqueOpaqueServer], [opaqueOpaqueClient], [KSFConfig], [OpaqueServer], [OpaqueClient], [OPAQUE], [OpenPgp], [OTPKIT], [Argon2id], [Argon2i], [Argon2d], [Scrypt], [Pbkdf2], [MLKem], [MLDsa], [SLHDsa], [RabbitState], [Rabbit], [RSA], [S2KType], [S2K], [Secp256k1], [Keccak], [KeccakManaged], [IdentityHash], [DoubleSha256],
+  [SHA3256], [SHA3384], [SHA3512], [SHAKE128Managed], [SHAKE256Managed], [KMAC128], [FipsHmacSha256], [BLAKE3], [TripleDES], [Asn1Parser], [PemParser], [SecureBox], [SecureArray], [NoiseProtocol], [VOPRF], [BitwUtil], [Shuffl3r], [SignatureUtils], [CryptobaseUtils], [VaultClient], [X509], [XChaCha20Poly1305], [XOR], [XSalsa20],
+  [CryptoBase]
+)
+$TypeAcceleratorsClass = [PsObject].Assembly.GetType('System.Management.Automation.TypeAccelerators')
+# Add type accelerators for every exportable type.
+foreach ($Type in $typestoExport) {
+  try {
+    $TypeAcceleratorsClass::Add($Type.FullName, $Type)
+  }
+  catch {
+    # Ignore if already exists
+    $null
+  }
+}
+# Remove type accelerators when the module is removed.
+$MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = {
+  foreach ($Type in $typestoExport) {
+    $TypeAcceleratorsClass::Remove($Type.FullName)
+  }
+}.GetNewClosure();
+
+$scripts = @();
+$Public = Get-ChildItem "$PSScriptRoot/Public" -Filter "*.ps1" -Recurse -ErrorAction SilentlyContinue
+$scripts += Get-ChildItem "$PSScriptRoot/Private" -Filter "*.ps1" -Recurse -ErrorAction SilentlyContinue
+$scripts += $Public
+
+foreach ($file in $scripts) {
+  try {
+    if ([string]::IsNullOrWhiteSpace($file.fullname)) { continue }
+    . "$($file.fullname)"
+  }
+  catch {
+    Write-Warning "Failed to import function $($file.BaseName): $_"
+    $host.UI.WriteErrorLine($_)
+  }
+}
+
+$Param = @{
+  Function = $Public.BaseName
+  Cmdlet   = '*'
+  Alias    = '*'
+  Verbose  = $false
+}
+Export-ModuleMember @Param
