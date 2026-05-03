@@ -24,14 +24,14 @@ Install-Module cryptobase -Scope CurrentUser
 Import-Module cryptobase
 ```
 
-**📦 Testing**
+**🗐 Testing (before opening a PR)**
 
 ```PowerShell
 Import-Module ./cryptobase.psd1
 ./Test-Module.ps1 -skipBuildOutputTest
 ```
 
-or test the build output:
+or test the `./BuildOutput/`
 
 ```PowerShell
 ./Test-Module.ps1
