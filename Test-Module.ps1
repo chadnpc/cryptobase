@@ -48,8 +48,8 @@ begin {
   $BuildOutDir = $PSScriptRoot
   $BuildOutput = [IO.DirectoryInfo]::New([IO.Path]::Combine($PSScriptRoot, 'BuildOutput', 'cryptobase'))
   if (!$BuildOutput.Exists -and !$skipBuildOutputTest) {
-    Write-Warning "NO_Build_OutPut | Please make sure to Build the module successfully first before running Test-Module.ps1"
-    throw [DirectoryNotFoundException]::new("Cannot find path '$($BuildOutput.FullName)' because it does not exist.")
+    Write-Warning "NO_Build_OutPut | Please make sure to Build the module successfully first before running Test-Module.ps1 or use -skipBuildOutputTest switch to skip this check"
+    throw [DirectoryNotFoundException]::New("Cannot find path '$($BuildOutput.FullName)' because it does not exist.")
   }
   if ($BuildOutput.Exists) {
     # Get latest built version
