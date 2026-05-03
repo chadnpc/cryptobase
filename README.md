@@ -28,7 +28,7 @@ Import-Module cryptobase
 
 ```PowerShell
 Import-Module ./cryptobase.psd1
-Invoke-Pester -Verbose
+./Test-Module.ps1 -skipBuildOutputTest
 ```
 
 or test the build output:
