@@ -46,12 +46,34 @@ Easily encrypt and decrypt data with a password using the main `[CryptoBase]` cl
 $password = "my-ultra-secure-password"
 $data = [System.Text.Encoding]::UTF8.GetBytes("Hello World")
 
-# Encrypt (uses PBKDF2-SHA256 + AES-GCM)
+# Encrypt (uses Argon2id + AES-256-GCM)
 $encrypted = [CryptoBase]::ProtectData($data, $password)
 
 # Decrypt
 $decrypted = [CryptoBase]::UnprotectData($encrypted, $password)
 [System.Text.Encoding]::UTF8.GetString($decrypted) # "Hello World"
+```
+
+
+**Modern Hybrid Cascades**
+Paranoid double-wrap mode with independent keys for AES-256-GCM and XChaCha20-Poly1305.
+
+```powershell
+$password = "my-ultra-secure-password"
+$data = [System.Text.Encoding]::UTF8.GetBytes("Top secret")
+$cascade = [CryptoBase]::ProtectDataCascade($data, $password)
+$plain = [CryptoBase]::UnprotectDataCascade($cascade, $password)
+```
+
+**Post-Quantum Hybrids**
+Hybrid encryption that combines Curve25519 ECDH with ML-KEM encapsulation.
+
+```powershell
+$recipientCurve = [Curve25519]::GenerateKeyPair()
+$mlKem = [MLKem]::new()
+$recipientKem = $mlKem.GenerateKeyPair()
+$payload = [System.Text.Encoding]::UTF8.GetBytes("future-proof")
+$hybrid = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientCurve.PublicKey, $recipientKem.PublicKey)
 ```
 
 **Password Hashing (BCrypt)**
