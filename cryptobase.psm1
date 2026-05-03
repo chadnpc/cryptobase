@@ -107,18 +107,16 @@ class CryptoBase : CryptobaseUtils {
     return [byte[]]@(0x01) + $salt + $nonce + $tag + $ciphertext
   }
 
+  static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$passw0rd) {
+    return [CryptoBase]::UnprotectData($protectedBytes, [xconvert]::ToSecurestring($passw0rd), $null)
+  }
+
   static [byte[]] UnprotectData([byte[]]$protectedBytes, [securestring]$password) {
     return [CryptoBase]::UnprotectData($protectedBytes, $password, $null)
   }
 
-  static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$password) {
-    return [CryptoBase]::UnprotectData($protectedBytes, $password, $null)
-  }
-
-  static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$password, [byte[]]$aad) {
-    $ss = [System.Security.SecureString]::new()
-    $password.ToCharArray().ForEach({ $ss.AppendChar($_) })
-    return [CryptoBase]::UnprotectData($protectedBytes, $ss, $aad)
+  static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$passw0rd, [byte[]]$aad) {
+    return [CryptoBase]::UnprotectData($protectedBytes, [xconvert]::ToSecurestring($passw0rd), $aad)
   }
 
   static [byte[]] UnprotectData([byte[]]$protectedBytes, [securestring]$password, [byte[]]$aad) {
@@ -178,12 +176,12 @@ class CryptoBase : CryptobaseUtils {
 
   static [string] SecureStringToString([SecureString]$secureString) {
     [SecureString]$ss = $secureString.Copy(); $result = [string]::Empty
-    $mdp = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss)
+    $mdp = [Marshal]::SecureStringToBSTR($ss)
     try {
-      $result = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($mdp)
+      $result = [Marshal]::PtrToStringBSTR($mdp)
     }
     finally {
-      [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($mdp)
+      [Marshal]::ZeroFreeBSTR($mdp)
       $ss.Dispose()
     }
     return $result
