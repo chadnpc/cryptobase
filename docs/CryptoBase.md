@@ -43,7 +43,7 @@ $opened = [CryptoBase]::UnprotectDataCascade($cascade, $password)
 ```
 
 ### CreateSealedBox
-Asymmetric authenticated payload mode: **Curve25519 ECDH + HKDF-SHA256 + XChaCha20-Poly1305**.
+Asymmetric authenticated payload mode: **NIST P-256 ECDH + HKDF-SHA256 + XChaCha20-Poly1305**.
 
 ```powershell
 $sender = [Curve25519]::GenerateKeyPair()
@@ -54,15 +54,15 @@ $sealed = [CryptoBase]::CreateSealedBox($msg, $sender.PrivateKey, $recipient.Pub
 ```
 
 ### ProtectDataQuantumHybrid
-Post-quantum hybrid encapsulation mode: **Curve25519 ECDH + ML-KEM**, combined with **BLAKE3** into a hybrid symmetric secret used by XChaCha20-Poly1305.
+Post-quantum hybrid encapsulation mode: **NIST P-256 ECDH + ML-KEM**, combined with **BLAKE3** into a hybrid symmetric secret used by XChaCha20-Poly1305.
 
 ```powershell
-$recipientCurve = [Curve25519]::GenerateKeyPair()
+$recipientP256 = [Curve25519]::GenerateKeyPair()
 $mlKem = [MLKem]::new()
 $recipientKem = $mlKem.GenerateKeyPair()
 $payload = [System.Text.Encoding]::UTF8.GetBytes("future-proof payload")
 
-$result = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientCurve.PublicKey, $recipientKem.PublicKey)
+$result = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientP256.PublicKey, $recipientKem.PublicKey)
 $result.Ciphertext
 $result.EphemeralCurvePub
 $result.KemCiphertext

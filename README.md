@@ -66,14 +66,14 @@ $plain = [CryptoBase]::UnprotectDataCascade($cascade, $password)
 ```
 
 **Post-Quantum Hybrids**
-Hybrid encryption that combines Curve25519 ECDH with ML-KEM encapsulation.
+Hybrid encryption that combines NIST P-256 ECDH with ML-KEM encapsulation.
 
 ```powershell
-$recipientCurve = [Curve25519]::GenerateKeyPair()
+$recipientP256 = [Curve25519]::GenerateKeyPair()
 $mlKem = [MLKem]::new()
 $recipientKem = $mlKem.GenerateKeyPair()
 $payload = [System.Text.Encoding]::UTF8.GetBytes("future-proof")
-$hybrid = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientCurve.PublicKey, $recipientKem.PublicKey)
+$hybrid = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientP256.PublicKey, $recipientKem.PublicKey)
 ```
 
 **Password Hashing (BCrypt)**

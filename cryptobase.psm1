@@ -179,8 +179,9 @@ class CryptoBase : CryptobaseUtils {
   }
 
   static [byte[]] CreateSealedBox([byte[]]$plaintext, [byte[]]$senderPrivateKey, [byte[]]$recipientPublicKey) {
+    # NOTE: [Curve25519] currently wraps ECDH over NIST P-256 key material in this module.
     $sharedSecret = [Curve25519]::DeriveSharedSecret($senderPrivateKey, $recipientPublicKey)
-    $info = [Encoding]::UTF8.GetBytes("CryptoBase_SealedBox_v1")
+    $info = [Encoding]::UTF8.GetBytes("CryptoBase_SealedBox_P256_v1")
     $symmetricKey = [HKDF]::DeriveKey($sharedSecret, $null, $info, 32)
     [Array]::Clear($sharedSecret, 0, $sharedSecret.Length)
 
@@ -192,9 +193,10 @@ class CryptoBase : CryptobaseUtils {
     return [byte[]]$nonce + $ciphertextWithTag
   }
 
-  static [hashtable] ProtectDataQuantumHybrid([byte[]]$plaintext, [byte[]]$recipientCurvePub, [byte[]]$recipientKemPub) {
+  static [hashtable] ProtectDataQuantumHybrid([byte[]]$plaintext, [byte[]]$recipientP256Pub, [byte[]]$recipientKemPub) {
+    # NOTE: [Curve25519] currently wraps ECDH over NIST P-256 key material in this module.
     $ephemeralCurve = [Curve25519]::GenerateKeyPair()
-    $classicShared = [Curve25519]::DeriveSharedSecret($ephemeralCurve.PrivateKey, $recipientCurvePub)
+    $classicShared = [Curve25519]::DeriveSharedSecret($ephemeralCurve.PrivateKey, $recipientP256Pub)
 
     $mlKem = [MLKem]::new()
     $kemResult = $mlKem.Encapsulate($recipientKemPub)
