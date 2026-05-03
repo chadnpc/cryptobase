@@ -1,6 +1,7 @@
 ﻿#!/usr/bin/env pwsh
 using namespace System.IO
 using namespace System.Collections.Generic
+using namespace System.Collections.ObjectModel
 
 # .SYNOPSIS
 #   cryptobase testScript v0.1.2
@@ -43,19 +44,22 @@ param (
   [switch]$CleanUp
 )
 begin {
-  $TestResults = $null
+  $TestResults = $null;
+  $BuildOutDir = $PSScriptRoot
   $BuildOutput = [IO.DirectoryInfo]::New([IO.Path]::Combine($PSScriptRoot, 'BuildOutput', 'cryptobase'))
-  if (!$BuildOutput.Exists) {
-    Write-Warning "NO_Build_OutPut | Please make sure to Build the module successfully first before running Test-Module.ps1";
+  if (!$BuildOutput.Exists -and !$skipBuildOutputTest) {
+    Write-Warning "NO_Build_OutPut | Please make sure to Build the module successfully first before running Test-Module.ps1"
     throw [DirectoryNotFoundException]::new("Cannot find path '$($BuildOutput.FullName)' because it does not exist.")
   }
-  # Get latest built version
-  if ([string]::IsNullOrWhiteSpace($version)) {
-    $version = $BuildOutput.GetDirectories().Name -as 'version[]' | Select-Object -Last 1
+  if ($BuildOutput.Exists) {
+    # Get latest built version
+    if ([string]::IsNullOrWhiteSpace($version)) {
+      $version = $BuildOutput.GetDirectories().Name -as 'version[]' | Select-Object -Last 1
+    }
+    $BuildOutDir = Resolve-Path $([IO.Path]::Combine($PSScriptRoot, 'BuildOutput', 'cryptobase', $version)) -ErrorAction Ignore | Get-Item -ErrorAction Ignore
+    if (!$BuildOutDir.Exists) { throw [DirectoryNotFoundException]::new($BuildOutDir) }
   }
-  $BuildOutDir = Resolve-Path $([IO.Path]::Combine($PSScriptRoot, 'BuildOutput', 'cryptobase', $version)) -ErrorAction Ignore | Get-Item -ErrorAction Ignore
-  if (!$BuildOutDir.Exists) { throw [DirectoryNotFoundException]::new($BuildOutDir) }
-  $manifestFile = [IO.FileInfo]::New([IO.Path]::Combine($BuildOutDir.FullName, "cryptobase.psd1"))
+  $manifestFile = [IO.FileInfo]::New([IO.Path]::Combine($BuildOutDir, "cryptobase.psd1"))
 }
 
 process {
@@ -64,27 +68,26 @@ process {
   Write-Host "==========================================" -ForegroundColor Cyan
   Write-Host "[0/3] Checking Prerequisites ..." -ForegroundColor Green
   if (!$BuildOutDir.Exists) {
-    $msg = 'Directory "{0}" Not Found. First make sure you successfuly built the module.' -f ([IO.Path]::GetRelativePath($PSScriptRoot, $BuildOutDir.FullName))
-    if ($skipBuildOutputTest.IsPresent) {
-      Write-Warning "$msg"
+    $msg = 'Directory "{0}" Not Found.' -f ([IO.Path]::GetRelativePath($PSScriptRoot, $BuildOutDir))
+    if ($skipBuildOutputTest) {
+      Write-Host $msg -ForegroundColor Yellow
     }
     else {
       throw [DirectoryNotFoundException]::New($msg)
     }
   }
-  if (!$skipBuildOutputTest.IsPresent -and !$manifestFile.Exists) {
-    throw [FileNotFoundException]::New("Could Not Find Module manifest File $([IO.Path]::GetRelativePath($PSScriptRoot, $manifestFile.FullName))")
+  if (!$manifestFile.Exists) {
+    throw [FileNotFoundException]::New("Could Not Find Module manifest File '$manifestFile'")
   }
-  if (!(Test-Path -Path $([IO.Path]::Combine($PSScriptRoot, "cryptobase.psd1")) -PathType Leaf -ErrorAction Ignore)) { throw [FileNotFoundException]::New("Module manifest file Was not Found in '$($BuildOutDir.FullName)'.") }
+  if (!(Test-Path -Path $([IO.Path]::Combine($PSScriptRoot, "cryptobase.psd1")) -PathType Leaf -ErrorAction Ignore)) { throw [FileNotFoundException]::New("Module manifest file Was not Found in '$BuildOutDir'.") }
   $script:fnNames = [List[string]]::New(); $testFiles = [List[IO.FileInfo]]::New()
   [void]$testFiles.Add([IO.FileInfo]::New([IO.Path]::Combine("$PSScriptRoot", 'Tests', 'cryptobase.Integration.Tests.ps1')))
   [void]$testFiles.Add([IO.FileInfo]::New([IO.Path]::Combine("$PSScriptRoot", 'Tests', 'cryptobase.Features.Tests.ps1')))
   [void]$testFiles.Add([IO.FileInfo]::New([IO.Path]::Combine("$PSScriptRoot", 'Tests', 'cryptobase.Module.Tests.ps1')))
-
   $missingTestFiles = $testFiles.Where({ !$_.Exists })
   if ($missingTestFiles.count -gt 0) { throw [FileNotFoundException]::new("One or more missing TestFiles! $($testFiles.BaseName -join ', ')") }
   Write-Host "[1/2] Testing ModuleManifest ..." -ForegroundColor Green
-  if (!$skipBuildOutputTest.IsPresent) {
+  if (!$skipBuildOutputTest) {
     Test-ModuleManifest -Path $manifestFile.FullName -ErrorAction Stop -Verbose:$false
   }
   Write-Host "[2/2] Running all test files" -ForegroundColor Yellow
@@ -92,7 +95,7 @@ process {
   if (!$IsCorrectPesterVersion) {
     throw "Pester tests were writen on pester v3.4.0, please downgrade and try again"
   }
-  $TestResults = Invoke-Pester -OutputFormat NUnitXml -OutputFile ([IO.Path]::Combine("$TestsPath", "results.xml")) -PassThru
+  $TestResults = Invoke-Pester -Path $([IO.Path]::Combine($PSScriptRoot, 'Tests')) -OutputFile ([IO.Path]::Combine("$TestsPath", "results.xml")) -OutputFormat NUnitXml -PassThru
 }
 
 end {
