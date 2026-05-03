@@ -91,7 +91,7 @@ class CryptoBase : CryptobaseUtils {
     [RandomNumberGenerator]::Fill($salt)
     [RandomNumberGenerator]::Fill($nonce)
     $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
-    $key = [Pbkdf2]::DeriveKey($passBytes, $salt, 120000, 32, "SHA256")
+    $key = [Argon2id]::Hash($passBytes, $salt, 65536, 3, 4, 32)
     $ciphertext = [byte[]]::new($plaintext.Length)
     $tag = [byte[]]::new(16)
     $aes = [System.Security.Cryptography.AesGcm]::new($key)
@@ -105,6 +105,117 @@ class CryptoBase : CryptobaseUtils {
     }
     # payload: version(1) + salt(16) + nonce(12) + tag(16) + ciphertext
     return [byte[]]@(0x01) + $salt + $nonce + $tag + $ciphertext
+  }
+
+  static [byte[]] ProtectDataCascade([byte[]]$plaintext, [securestring]$password) {
+    $salt = [byte[]]::new(32)
+    [RandomNumberGenerator]::Fill($salt)
+
+    $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
+    $masterKey = [Argon2id]::Hash($passBytes, $salt, 65536, 4, 4, 64)
+    [Array]::Clear($passBytes, 0, $passBytes.Length)
+
+    $aesKey = [byte[]]$masterKey[0..31]
+    $xchachaKey = [byte[]]$masterKey[32..63]
+    [Array]::Clear($masterKey, 0, $masterKey.Length)
+
+    $aesNonce = [byte[]]::new(12)
+    [RandomNumberGenerator]::Fill($aesNonce)
+    $innerCiphertext = [byte[]]::new($plaintext.Length)
+    $aesTag = [byte[]]::new(16)
+
+    $aes = [System.Security.Cryptography.AesGcm]::new($aesKey)
+    try {
+      $aes.Encrypt($aesNonce, $plaintext, $innerCiphertext, $aesTag)
+    }
+    finally {
+      $aes.Dispose()
+      [Array]::Clear($aesKey, 0, $aesKey.Length)
+    }
+
+    $innerPayload = [byte[]]$aesNonce + $aesTag + $innerCiphertext
+
+    $xNonce = [byte[]]::new(24)
+    [RandomNumberGenerator]::Fill($xNonce)
+    $outerPayload = [XChaCha20Poly1305]::Encrypt($innerPayload, $xchachaKey, $xNonce)
+    [Array]::Clear($xchachaKey, 0, $xchachaKey.Length)
+
+    return [byte[]]@(0x02) + $salt + $xNonce + $outerPayload
+  }
+
+  static [byte[]] UnprotectDataCascade([byte[]]$protectedBytes, [securestring]$password) {
+    if ($protectedBytes.Length -lt 58) { throw [ArgumentException]::new("Invalid cascade payload.") }
+    if ($protectedBytes[0] -ne 0x02) { throw [ArgumentException]::new("Unsupported cascade payload version.") }
+
+    $salt = [byte[]]$protectedBytes[1..32]
+    $xNonce = [byte[]]$protectedBytes[33..56]
+    $outerPayload = [byte[]]$protectedBytes[57..($protectedBytes.Length - 1)]
+
+    $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
+    $masterKey = [Argon2id]::Hash($passBytes, $salt, 65536, 4, 4, 64)
+    [Array]::Clear($passBytes, 0, $passBytes.Length)
+
+    $aesKey = [byte[]]$masterKey[0..31]
+    $xchachaKey = [byte[]]$masterKey[32..63]
+    [Array]::Clear($masterKey, 0, $masterKey.Length)
+
+    $innerPayload = [XChaCha20Poly1305]::Decrypt($outerPayload, $xchachaKey, $xNonce)
+    [Array]::Clear($xchachaKey, 0, $xchachaKey.Length)
+
+    $aesNonce = [byte[]]$innerPayload[0..11]
+    $aesTag = [byte[]]$innerPayload[12..27]
+    $innerCiphertext = [byte[]]$innerPayload[28..($innerPayload.Length - 1)]
+    $plaintext = [byte[]]::new($innerCiphertext.Length)
+
+    $aes = [System.Security.Cryptography.AesGcm]::new($aesKey)
+    try {
+      $aes.Decrypt($aesNonce, $innerCiphertext, $aesTag, $plaintext)
+      return $plaintext
+    }
+    finally {
+      $aes.Dispose()
+      [Array]::Clear($aesKey, 0, $aesKey.Length)
+    }
+  }
+
+  static [byte[]] CreateSealedBox([byte[]]$plaintext, [byte[]]$senderPrivateKey, [byte[]]$recipientPublicKey) {
+    # NOTE: [Curve25519] currently wraps ECDH over NIST P-256 key material in this module.
+    $sharedSecret = [Curve25519]::DeriveSharedSecret($senderPrivateKey, $recipientPublicKey)
+    $info = [Encoding]::UTF8.GetBytes("CryptoBase_SealedBox_P256_v1")
+    $symmetricKey = [HKDF]::DeriveKey($sharedSecret, $null, $info, 32)
+    [Array]::Clear($sharedSecret, 0, $sharedSecret.Length)
+
+    $nonce = [byte[]]::new(24)
+    [RandomNumberGenerator]::Fill($nonce)
+    $ciphertextWithTag = [XChaCha20Poly1305]::Encrypt($plaintext, $symmetricKey, $nonce)
+    [Array]::Clear($symmetricKey, 0, $symmetricKey.Length)
+
+    return [byte[]]$nonce + $ciphertextWithTag
+  }
+
+  static [hashtable] ProtectDataQuantumHybrid([byte[]]$plaintext, [byte[]]$recipientP256Pub, [byte[]]$recipientKemPub) {
+    # NOTE: [Curve25519] currently wraps ECDH over NIST P-256 key material in this module.
+    $ephemeralCurve = [Curve25519]::GenerateKeyPair()
+    $classicShared = [Curve25519]::DeriveSharedSecret($ephemeralCurve.PrivateKey, $recipientP256Pub)
+
+    $mlKem = [MLKem]::new()
+    $kemResult = $mlKem.Encapsulate($recipientKemPub)
+    $pqcShared = $kemResult.SharedSecret
+
+    $hybridSecret = [BLAKE3]::ComputeHash([byte[]]$classicShared + $pqcShared)
+    [Array]::Clear($classicShared, 0, $classicShared.Length)
+    [Array]::Clear($pqcShared, 0, $pqcShared.Length)
+
+    $nonce = [byte[]]::new(24)
+    [RandomNumberGenerator]::Fill($nonce)
+    $ciphertext = [XChaCha20Poly1305]::Encrypt($plaintext, $hybridSecret, $nonce)
+    [Array]::Clear($hybridSecret, 0, $hybridSecret.Length)
+
+    return @{
+      Ciphertext = [byte[]]$nonce + $ciphertext
+      EphemeralCurvePub = $ephemeralCurve.PublicKey
+      KemCiphertext = $kemResult.Ciphertext
+    }
   }
 
   static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$passw0rd) {
@@ -128,7 +239,7 @@ class CryptoBase : CryptobaseUtils {
     $cipherLen = $protectedBytes.Length - 45
     $ciphertext = [byte[]]::new($cipherLen); [Array]::Copy($protectedBytes, 45, $ciphertext, 0, $cipherLen)
     $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
-    $key = [Pbkdf2]::DeriveKey($passBytes, $salt, 120000, 32, "SHA256")
+    $key = [Argon2id]::Hash($passBytes, $salt, 65536, 3, 4, 32)
     $plaintext = [byte[]]::new($cipherLen)
     $aes = [System.Security.Cryptography.AesGcm]::new($key)
     try {

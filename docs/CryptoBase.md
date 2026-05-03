@@ -4,7 +4,7 @@ The `[CryptoBase]` is the main class, it provides high-level convenience methods
 
 ## Data Protection
 
-These methods use **PBKDF2-SHA256** (120,000 iterations) to derive a 256-bit key from a password, and then use **AES-GCM** for authenticated encryption.
+`ProtectData` / `UnprotectData` use **Argon2id** (64 MiB memory, 3 iterations, parallelism 4) to derive a 256-bit key from a password, and then use **AES-256-GCM** for authenticated encryption.
 
 ### ProtectData
 Encrypts plaintext with a password.
@@ -29,6 +29,44 @@ $decrypted = [CryptoBase]::UnprotectData($protected, $password)
 [System.Text.Encoding]::UTF8.GetString($decrypted) # "Secret message"
 ```
 
+## Nerd-Approved Hybrids
+
+### ProtectDataCascade
+Paranoid cascade mode: **AES-256-GCM (inner)** wrapped by **XChaCha20-Poly1305 (outer)**, with independent keys derived from a 64-byte Argon2id output.
+
+```powershell
+$plaintext = [System.Text.Encoding]::UTF8.GetBytes("Classified")
+$password = "correct horse battery staple"
+
+$cascade = [CryptoBase]::ProtectDataCascade($plaintext, $password)
+$opened = [CryptoBase]::UnprotectDataCascade($cascade, $password)
+```
+
+### CreateSealedBox
+Asymmetric authenticated payload mode: **NIST P-256 ECDH + HKDF-SHA256 + XChaCha20-Poly1305**.
+
+```powershell
+$sender = [Curve25519]::GenerateKeyPair()
+$recipient = [Curve25519]::GenerateKeyPair()
+$msg = [System.Text.Encoding]::UTF8.GetBytes("sealed hello")
+
+$sealed = [CryptoBase]::CreateSealedBox($msg, $sender.PrivateKey, $recipient.PublicKey)
+```
+
+### ProtectDataQuantumHybrid
+Post-quantum hybrid encapsulation mode: **NIST P-256 ECDH + ML-KEM**, combined with **BLAKE3** into a hybrid symmetric secret used by XChaCha20-Poly1305.
+
+```powershell
+$recipientP256 = [Curve25519]::GenerateKeyPair()
+$mlKem = [MLKem]::new()
+$recipientKem = $mlKem.GenerateKeyPair()
+$payload = [System.Text.Encoding]::UTF8.GetBytes("future-proof payload")
+
+$result = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientP256.PublicKey, $recipientKem.PublicKey)
+$result.Ciphertext
+$result.EphemeralCurvePub
+$result.KemCiphertext
+```
 
 ## Message Signing
 
@@ -53,7 +91,6 @@ Verifies a signature against a public key.
 $isValid = [CryptoBase]::VerifyMessage($data, $signature, $publicKey)
 ```
 
-
 ## File Obfuscation
 
 Provides simple file-level encryption with integrity checking using **CRC24**.
@@ -67,7 +104,6 @@ Provides simple file-level encryption with integrity checking using **CRC24**.
 ```powershell
 [CryptoBase]::DeobfuscateFile("source.enc", "decrypted.txt", $password)
 ```
-
 
 ## Secure String Handling
 
