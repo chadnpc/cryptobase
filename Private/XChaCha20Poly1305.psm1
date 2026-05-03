@@ -41,57 +41,58 @@ class XChaCha20Poly1305 : CryptobaseUtils {
     return $result
   }
 
-  static [byte[]] Encrypt([byte[]]$plaintext, [byte[]]$key, [byte[]]$nonce) {
-    return [XChaCha20Poly1305]::Encrypt($plaintext, $key, $nonce, $null)
+  static [byte[]] Encrypt([byte[]]$plaintextbytes, [byte[]]$key, [byte[]]$nonce) {
+    return [XChaCha20Poly1305]::Encrypt($plaintextbytes, $key, $nonce, $null)
   }
 
-  static [byte[]] Encrypt([byte[]]$plaintext, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
+  static [byte[]] Encrypt([byte[]]$plaintextbytes, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
     if ($null -eq $key -or $key.Length -ne [XChaCha20Poly1305]::KeySize) { throw [ArgumentException]::new('Key must be 32 bytes.') }
     if ($null -eq $nonce -or $nonce.Length -ne [XChaCha20Poly1305]::NonceSize) { throw [ArgumentException]::new('Nonce must be 24 bytes.') }
     
     $subKey = [XChaCha20Poly1305]::HChaCha20($key, $nonce[0..15])
     $nonce12 = [byte[]]@(0, 0, 0, 0) + $nonce[16..23]
     
-    return [ChaCha20Poly1305Pure]::Encrypt($subKey, $nonce12, $plaintext, $aad)
+    return [ChaCha20Poly1305Pure]::Encrypt($subKey, $nonce12, $plaintextbytes, $aad)
   }
 
-  static [byte[]] Decrypt([byte[]]$input, [byte[]]$key, [byte[]]$nonce) {
-    return [XChaCha20Poly1305]::Decrypt($input, $key, $nonce, $null)
+  static [byte[]] Decrypt([byte[]]$inputbytes, [byte[]]$key, [byte[]]$nonce) {
+    return [XChaCha20Poly1305]::Decrypt($inputbytes, $key, $nonce, $null)
   }
 
-  static [byte[]] Decrypt([byte[]]$input, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
+  static [byte[]] Decrypt([byte[]]$inputbytes, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
     if ($null -eq $key -or $key.Length -ne [XChaCha20Poly1305]::KeySize) { throw [ArgumentException]::new('Key must be 32 bytes.') }
     if ($null -eq $nonce -or $nonce.Length -ne [XChaCha20Poly1305]::NonceSize) { throw [ArgumentException]::new('Nonce must be 24 bytes.') }
-    if ($input.Length -lt [XChaCha20Poly1305]::TagSize) { throw [ArgumentException]::new('Ciphertext too short.') }
+    if ($inputbytes.Length -lt [XChaCha20Poly1305]::TagSize) { throw [ArgumentException]::new('Ciphertext too short.') }
     
     $subKey = [XChaCha20Poly1305]::HChaCha20($key, $nonce[0..15])
     $nonce12 = [byte[]]@(0, 0, 0, 0) + $nonce[16..23]
     
-    return [ChaCha20Poly1305Pure]::Decrypt($subKey, $nonce12, $input, $aad)
+    return [ChaCha20Poly1305Pure]::Decrypt($subKey, $nonce12, $inputbytes, $aad)
   }
 
-  static [byte[]] Authenticate([byte[]]$plaintext, [byte[]]$key, [byte[]]$nonce) {
-    return [XChaCha20Poly1305]::Authenticate($plaintext, $key, $nonce, $null)
+  static [byte[]] Authenticate([byte[]]$plaintextbytes, [byte[]]$key, [byte[]]$nonce) {
+    return [XChaCha20Poly1305]::Authenticate($plaintextbytes, $key, $nonce, $null)
   }
 
-  static [byte[]] Authenticate([byte[]]$plaintext, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
-    $ctWithTag = [XChaCha20Poly1305]::Encrypt($plaintext, $key, $nonce, $aad)
+  static [byte[]] Authenticate([byte[]]$plaintextbytes, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
+    $ctWithTag = [XChaCha20Poly1305]::Encrypt($plaintextbytes, $key, $nonce, $aad)
     return $ctWithTag[($ctWithTag.Length - 16)..($ctWithTag.Length - 1)]
   }
 
-  static [bool] Verify([byte[]]$plaintext, [byte[]]$tag, [byte[]]$key, [byte[]]$nonce) {
-    return [XChaCha20Poly1305]::Verify($plaintext, $tag, $key, $nonce, $null)
+  static [bool] Verify([byte[]]$plaintextbytes, [byte[]]$tag, [byte[]]$key, [byte[]]$nonce) {
+    return [XChaCha20Poly1305]::Verify($plaintextbytes, $tag, $key, $nonce, $null)
   }
 
-  static [bool] Verify([byte[]]$plaintext, [byte[]]$tag, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
+  static [bool] Verify([byte[]]$plaintextbytes, [byte[]]$tag, [byte[]]$key, [byte[]]$nonce, [byte[]]$aad) {
     try {
-      $computedTag = [XChaCha20Poly1305]::Authenticate($plaintext, $key, $nonce, $aad)
+      $computedTag = [XChaCha20Poly1305]::Authenticate($plaintextbytes, $key, $nonce, $aad)
       if ($computedTag.Length -ne $tag.Length) { return $false }
       for ($i = 0; $i -lt $tag.Length; $i++) {
         if ($computedTag[$i] -ne $tag[$i]) { return $false }
       }
       return $true
-    } catch {
+    }
+    catch {
       return $false
     }
   }
