@@ -20,8 +20,68 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
     }
   }
 
-  #region SHA3 Tests
-  Context "SHA3 Hash Classes" {
+  Context "Hashing Classes: SHA3, Keccak, BLAKE3" {
+    It "IdentityHash should return input bytes unchanged" {
+      $ih = [IdentityHash]::new()
+      $res = $ih.ComputeHash([byte[]]$testData)
+      [BitConverter]::ToString($res) | Should Be "68-65-6C-6C-6F"
+    }
+
+    It "DoubleSha256 should return a 256-bit hash" {
+      $ds = [DoubleSha256]::new()
+      $res = $ds.ComputeHash([byte[]]$testData)
+      $res.Length | Should Be 32
+    }
+
+    It "KeccakManaged (256) should return correct empty string hash" {
+      $k = [KeccakManaged]::new(256)
+      $res = $k.ComputeHash([byte[]]::new(0))
+      $hex = ($res | ForEach-Object { "{0:x2}" -f $_ }) -join ""
+      $hex | Should Be "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+    }
+
+    It "SHA3_256 should return 256-bit hash" {
+      $hash = [SHA3256]::ComputeHash([byte[]]$testData)
+      $hash.Length | Should Be 32
+    }
+
+    It "BLAKE3 should return 256-bit hash" {
+      $hash = [BLAKE3]::ComputeHash([byte[]]$testData)
+      $hash.Length | Should Be 32
+    }
+
+    It "SHAKE128 should produce variable length output" {
+      $hash = [SHAKE128Managed]::ComputeHash([byte[]]::new(0), 16)
+      $hash.Length | Should Be 16
+      $hashHex = ($hash | ForEach-Object { "{0:x2}" -f $_ }) -join ""
+      $hashHex | Should Be "7f9c2ba4e88f827d616045507605853e"
+    }
+
+    It "SHAKE128 should produce variable length output" {
+      $hash = [SHAKE128Managed]::ComputeHash($testData, 64)
+      $hash.Length | Should Be 64
+    }
+
+    It "SHAKE256 should produce variable length output" {
+      $hash = [SHAKE256Managed]::ComputeHash($testData, 128)
+      $hash.Length | Should Be 128
+    }
+
+    It "SHAKE128 should handle empty input" {
+      $hash = [SHAKE128Managed]::ComputeHash([byte[]]::new(0), 32)
+      $hash.Length | Should Be 32
+    }
+
+    It "SHAKE256 should handle empty input" {
+      $hash = [SHAKE256Managed]::ComputeHash([byte[]]::new(0), 64)
+      $hash.Length | Should Be 64
+    }
+
+    It "SHAKE256 should produce variable length output" {
+      $hash = [SHAKE256]::ComputeHash([byte[]]$testData, 64)
+      $hash.Length | Should Be 64
+    }
+
     It "SHA3_256 should compute correct hash" {
       $hash = [SHA3256]::ComputeHash([System.Text.Encoding]::UTF8.GetBytes("hello"))
       $hashHex = ($hash | ForEach-Object { "{0:x2}" -f $_ }) -join ""
@@ -49,38 +109,6 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $hash512.Length | Should Be 64
     }
   }
-  #endregion
-
-  #region SHAKE Tests
-  Context "SHAKE Extendable-Output Functions" {
-    It "SHAKE128 should produce variable length output" {
-      $hash = [SHAKE128Managed]::ComputeHash([byte[]]::new(0), 16)
-      $hash.Length | Should Be 16
-      $hashHex = ($hash | ForEach-Object { "{0:x2}" -f $_ }) -join ""
-      $hashHex | Should Be "7f9c2ba4e88f827d616045507605853e"
-    }
-
-    It "SHAKE128 should produce variable length output" {
-      $hash = [SHAKE128Managed]::ComputeHash($testData, 64)
-      $hash.Length | Should Be 64
-    }
-
-    It "SHAKE256 should produce variable length output" {
-      $hash = [SHAKE256Managed]::ComputeHash($testData, 128)
-      $hash.Length | Should Be 128
-    }
-
-    It "SHAKE128 should handle empty input" {
-      $hash = [SHAKE128Managed]::ComputeHash([byte[]]::new(0), 32)
-      $hash.Length | Should Be 32
-    }
-
-    It "SHAKE256 should handle empty input" {
-      $hash = [SHAKE256Managed]::ComputeHash([byte[]]::new(0), 64)
-      $hash.Length | Should Be 64
-    }
-  }
-  #endregion
 
   #region HKDF Tests
   Context "HKDF Key Derivation" {
