@@ -1,10 +1,10 @@
 ﻿
 #!/usr/bin/env pwsh
 # .SYNOPSIS
-#   cryptobase testScript v0.1.1
+#   cryptobase testScript v0.1.2
 # .EXAMPLE
-#   ./Test-Module.ps1 -version 0.1.1
-#   Will test the module in ./BuildOutput/cryptobase/0.1.1/
+#   ./Test-Module.ps1 -version 0.1.2
+#   Will test the module in ./BuildOutput/cryptobase/0.1.2/
 # .EXAMPLE
 #   ./Test-Module.ps1
 #   Will test the latest  module version in ./BuildOutput/cryptobase/
@@ -84,6 +84,10 @@ process {
     Test-ModuleManifest -Path $manifestFile.FullName -ErrorAction Stop -Verbose:$false
   }
   Write-Host "[2/2] Running all test files" -ForegroundColor Yellow
+  $IsCorrectPesterVersion = (Get-Module Pester -ListAvailable | Select-Object -Expand Version) -le [version]"3.4.0"
+  if (!$IsCorrectPesterVersion) {
+    throw "Pester tests were writen on pester v3.4.0, please downgrade and try again"
+  }
   $TestResults = Invoke-Pester -OutputFormat NUnitXml -OutputFile ([IO.Path]::Combine("$TestsPath", "results.xml")) -PassThru
 }
 
