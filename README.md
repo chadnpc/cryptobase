@@ -24,6 +24,12 @@ Install-Module cryptobase -Scope CurrentUser
 Import-Module cryptobase
 ```
 
+**📦 Testing**
+
+```PowerShell
+./Test-Module.ps1
+```
+
 **💡 Quick Examples**
 
 **High-Level Data Protection**
