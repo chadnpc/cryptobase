@@ -3,6 +3,7 @@ using namespace System.Security.Cryptography
 
 using module ./Enums.psm1
 using module ./Sha.psm1
+using module ./EdwardsCurve.psm1
 
 # PostQuantumCryptography
 # .SYNOPSIS
@@ -97,12 +98,13 @@ class MLKemCore {
   }
 
   static [hashtable] GetLevelInfo([MLKemSecurityLevel]$level) {
-    switch ($level) {
-      ([MLKemSecurityLevel]::MLKem512) { return @{ SecurityBits = 128; Description = "ML-KEM-512: ~128-bit post-quantum security" } }
-      ([MLKemSecurityLevel]::MLKem768) { return @{ SecurityBits = 192; Description = "ML-KEM-768: ~192-bit post-quantum security" } }
-      ([MLKemSecurityLevel]::MLKem1024) { return @{ SecurityBits = 256; Description = "ML-KEM-1024: ~256-bit post-quantum security" } }
+    $levelInfo = switch ($level) {
+      ([MLKemSecurityLevel]::MLKem512) { @{ SecurityBits = 128; Description = "ML-KEM-512: ~128-bit post-quantum security" }; break }
+      ([MLKemSecurityLevel]::MLKem768) { @{ SecurityBits = 192; Description = "ML-KEM-768: ~192-bit post-quantum security" }; break }
+      ([MLKemSecurityLevel]::MLKem1024) { @{ SecurityBits = 256; Description = "ML-KEM-1024: ~256-bit post-quantum security" }; break }
+      default { @{} }
     }
-    return @{}
+    return $levelInfo
   }
 }
 
@@ -224,7 +226,7 @@ class MLDsaCore {
 
   static [bool] Verify([byte[]]$message, [byte[]]$signature, [byte[]]$publicKey, [byte[]]$context) {
     if ($null -eq $signature -or $signature.Length -lt 64) { return $false }
-        
+
     # Extract the Ed25519 part
     $edSig = [byte[]]::new(64)
     [Array]::Copy($signature, 0, $edSig, 0, 64)
@@ -236,12 +238,13 @@ class MLDsaCore {
   # Removed conflicting instance Verify method
 
   static [int] GetSignatureSize([MLDsaSecurityLevel]$level) {
-    switch ($level) {
-      ([MLDsaSecurityLevel]::MLDsa44) { return 2420 }
-      ([MLDsaSecurityLevel]::MLDsa65) { return 3309 }
-      ([MLDsaSecurityLevel]::MLDsa87) { return 4627 }
+    $size = switch ($level) {
+      ([MLDsaSecurityLevel]::MLDsa44) { 2420; break }
+      ([MLDsaSecurityLevel]::MLDsa65) { 3309; break }
+      ([MLDsaSecurityLevel]::MLDsa87) { 4627; break }
+      default { 3309 }
     }
-    return 3309
+    return $size
   }
 }
 
@@ -366,15 +369,16 @@ class SlhDsaCore {
   # Removed conflicting instance Verify method
 
   static [int] GetSignatureSize([SlhDsaSecurityLevel]$level) {
-    switch ($level) {
-      ([SlhDsaSecurityLevel]::SlhDsa128s) { return 7856 }
-      ([SlhDsaSecurityLevel]::SlhDsa128f) { return 17088 }
-      ([SlhDsaSecurityLevel]::SlhDsa192s) { return 16224 }
-      ([SlhDsaSecurityLevel]::SlhDsa192f) { return 35664 }
-      ([SlhDsaSecurityLevel]::SlhDsa256s) { return 29792 }
-      ([SlhDsaSecurityLevel]::SlhDsa256f) { return 49856 }
+    $size = switch ($level) {
+      ([SlhDsaSecurityLevel]::SlhDsa128s) { 7856; break }
+      ([SlhDsaSecurityLevel]::SlhDsa128f) { 17088; break }
+      ([SlhDsaSecurityLevel]::SlhDsa192s) { 16224; break }
+      ([SlhDsaSecurityLevel]::SlhDsa192f) { 35664; break }
+      ([SlhDsaSecurityLevel]::SlhDsa256s) { 29792; break }
+      ([SlhDsaSecurityLevel]::SlhDsa256f) { 49856; break }
+      default { 7856 }
     }
-    return 7856
+    return $size
   }
 }
 
@@ -431,6 +435,5 @@ class SlhDsaBuilder {
     if ($null -eq $this._publicKey) { throw "Public key must be set before verification." }
     if ($null -eq $this._data) { throw "Data must be set before verification." }
     return [SlhDsaCore]::Verify($this._data, $signature, $this._publicKey, $this._context)
-   
-
   }
+}
