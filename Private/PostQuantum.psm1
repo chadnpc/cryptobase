@@ -15,33 +15,29 @@ using namespace System.Security.Cryptography
 class MLKem {
   MLKem() {}
 
-  [object] GenerateKeyPair() {
-    $privateKey = [byte[]]::new(32)
-    [System.Security.Cryptography.RandomNumberGenerator]::Fill($privateKey)
-    $publicKey = [byte[]]::new(32)
-    return [PSCustomObject]@{ PublicKey = $publicKey; PrivateKey = $privateKey }
+  static [hashtable] GenerateKeyPair() {
+    return [MLKem]::GenerateKeyPair(768)
   }
-
-  static [hashtable] GenerateKeyPair([int]$KeyLength = 768) {
+  static [hashtable] GenerateKeyPair([int]$KeyLength) {
     $mlkemType = [System.type]::GetType("System.Security.Cryptography.MLKem, System.Security.Cryptography")
-    if ($null -ne $mlkemType) {
-      $mlkem = $mlkemType::new()
-      try {
-        $publicKey = $mlkem.PublicKey.ToArray()
-        $privateKey = $mlkem.PrivateKey.ToArray()
-        return @{
-          PublicKey  = $publicKey
-          PrivateKey = $privateKey
-        }
-      } finally {
-        $mlkem.Dispose()
-      }
+    if ($null -eq $mlkemType) {
+      throw [System.PlatformNotSupportedException]::new("ML-KEM requires .NET 10+ or external library")
     }
-
-    throw [System.PlatformNotSupportedException]::new("ML-KEM requires .NET 10+ or external library")
+    $pair = @{}; $mlkem = $mlkemType::new()
+    try {
+      $publicKey = $mlkem.PublicKey.ToArray()
+      $privateKey = $mlkem.PrivateKey.ToArray()
+      $pair = @{
+        PublicKey  = $publicKey
+        PrivateKey = $privateKey
+      }
+    } finally {
+      $mlkem.Dispose()
+    }
+    return $pair
   }
 
-  [object] Encapsulate([byte[]]$PublicKey) {
+  static [object] Encapsulate([byte[]]$PublicKey) {
     if ($null -eq $PublicKey) { throw [System.ArgumentNullException]::new("PublicKey") }
 
     # Stub implementation for tests (Native .NET 10 classes are unstable/preview)
@@ -52,7 +48,7 @@ class MLKem {
     return [PSCustomObject]@{ SharedSecret = $shared; Ciphertext = $ciphertext }
   }
 
-  [byte[]] Decapsulate([byte[]]$Ciphertext, [byte[]]$PrivateKey) {
+  static [byte[]] Decapsulate([byte[]]$Ciphertext, [byte[]]$PrivateKey) {
     if ($null -eq $PrivateKey) { throw [System.ArgumentNullException]::new("PrivateKey") }
     if ($null -eq $Ciphertext) { throw [System.ArgumentNullException]::new("Ciphertext") }
 
@@ -75,13 +71,10 @@ class MLKem {
 class MLDsa {
   MLDsa() {}
 
-  [object] GenerateKeyPair() {
-    $privateKey = [byte[]]::new(32)
-    [System.Security.Cryptography.RandomNumberGenerator]::Fill($privateKey)
-    $publicKey = [System.Security.Cryptography.SHA256]::HashData($privateKey)
-    return [PSCustomObject]@{ PublicKey = $publicKey; PrivateKey = $privateKey }
+  static [hashtable] GenerateKeyPair() {
+    return [MLDsa]::GenerateKeyPair(65)
   }
-  static [hashtable] GenerateKeyPair([int]$KeyLength = 65) {
+  static [hashtable] GenerateKeyPair([int]$KeyLength) {
     $mldsaType = [System.type]::GetType("System.Security.Cryptography.MLDsa, System.Security.Cryptography")
     if ($null -ne $mldsaType) {
       $mldsa = $mldsaType::new()
