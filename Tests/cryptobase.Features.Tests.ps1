@@ -552,17 +552,28 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   #region Post-Quantum Tests
   Context "Post-Quantum Cryptography" {
     It "MLKem should generate key pair" {
-      $keyPair = [MLKem]::GenerateKeyPair()
+      $keyPair = [MLKemCore]::GenerateKeyPair()
       $keyPair.PublicKey.Length | Should BeGreaterThan 0
       $keyPair.PrivateKey.Length | Should BeGreaterThan 0
     }
 
     It "MLKem should encapsulate and decapsulate" {
-      $keyPair = [MLKem]::GenerateKeyPair()
-      $encap = $mlkem.Encapsulate($keyPair.PublicKey)
-      $shared = $mlkem.Decapsulate($encap.Ciphertext, $keyPair.PrivateKey)
-      $shared | Should Be $encap.SharedSecret
+      $keyPair = [MLKemCore]::GenerateKeyPair()
+      $encap = [MLKemCore]::Encapsulate($keyPair.PublicKey)
+      $shared = [MLKemCore]::Decapsulate($encap.Ciphertext, $keyPair.PrivateKey)
+      ($shared -join ',') | Should Be ($encap.SharedSecret -join ',')
     }
+
+    It "MLKemBuilder should work correctly" {
+      $builder = [MLKemBuilder]::Create().WithSecurityLevel([MLKemSecurityLevel]::MLKem768)
+      $keyPair = $builder.GenerateKeyPair()
+
+      $encap = [MLKemBuilder]::Create().WithPublicKey($keyPair.PublicKey).Encapsulate()
+      $shared = [MLKemBuilder]::Create().WithKeyPair($keyPair).Decapsulate($encap.Ciphertext)
+
+      ($shared -join ',') | Should Be ($encap.SharedSecret -join ',')
+    }
+
 
     It "MLDsa should generate key pair" {
       $mldsa = [MLDsa]::new()
