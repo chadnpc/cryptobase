@@ -183,3 +183,9 @@ enum ArmorType {
   Signature
   SignedMessage
 }
+
+enum MLKemSecurityLevel {
+  MLKem512
+  MLKem768
+  MLKem1024
+}
