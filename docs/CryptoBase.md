@@ -1,8 +1,8 @@
-# CryptoBase
+**Main class and cmdlet overview**
 
 The `[CryptoBase]` is the main class, it provides high-level convenience methods for common cryptographic tasks.
 
-## Data Protection
+## **Data Protection**
 
 `ProtectData` / `UnprotectData` use **Argon2id** (64 MiB memory, 3 iterations, parallelism 4) to derive a 256-bit key from a password, and then use **AES-256-GCM** for authenticated encryption.
 
@@ -29,9 +29,9 @@ $decrypted = [CryptoBase]::UnprotectData($protected, $password)
 [System.Text.Encoding]::UTF8.GetString($decrypted) # "Secret message"
 ```
 
-## Nerd-Approved Hybrids
+**Nerd-Approved Hybrids**
 
-### ProtectDataCascade
+**ProtectDataCascade**
 Paranoid cascade mode: **AES-256-GCM (inner)** wrapped by **XChaCha20-Poly1305 (outer)**, with independent keys derived from a 64-byte Argon2id output.
 
 ```powershell
@@ -42,7 +42,7 @@ $cascade = [CryptoBase]::ProtectDataCascade($plainbytes, $password)
 $opened = [CryptoBase]::UnprotectDataCascade($cascade, $password)
 ```
 
-### CreateSealedBox
+**CreateSealedBox**
 Asymmetric authenticated payload mode: **NIST P-256 ECDH + HKDF-SHA256 + XChaCha20-Poly1305**.
 
 ```powershell
@@ -53,7 +53,7 @@ $msg = [System.Text.Encoding]::UTF8.GetBytes("sealed hello")
 $sealed = [CryptoBase]::CreateSealedBox($msg, $sender.PrivateKey, $recipient.PublicKey)
 ```
 
-### ProtectDataQuantumHybrid
+**ProtectDataQuantumHybrid**
 Post-quantum hybrid encapsulation mode: **NIST P-256 ECDH + ML-KEM**, combined with **BLAKE3** into a hybrid symmetric secret used by XChaCha20-Poly1305.
 
 ```powershell
