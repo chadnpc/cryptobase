@@ -19,14 +19,14 @@ class XChaCha20Poly1305 : CryptobaseUtils {
     for ($i = 0; $i -lt 4; $i++) { $state[12 + $i] = [System.BitConverter]::ToUInt32($nonce, $i * 4) }
 
     for ($i = 0; $i -lt 10; $i++) {
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 0, 4, 8, 12)
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 1, 5, 9, 13)
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 2, 6, 10, 14)
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 3, 7, 11, 15)
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 0, 5, 10, 15)
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 1, 6, 11, 12)
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 2, 7, 8, 13)
-      [ChaCha20Poly1305Pure]::QuarterRound($state, 3, 4, 9, 14)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 0, 4, 8, 12)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 1, 5, 9, 13)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 2, 6, 10, 14)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 3, 7, 11, 15)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 0, 5, 10, 15)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 1, 6, 11, 12)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 2, 7, 8, 13)
+      [ChaCha20Poly1305Managed]::QuarterRound($state, 3, 4, 9, 14)
     }
 
     [byte[]]$result = [byte[]]::new(32)
@@ -52,7 +52,7 @@ class XChaCha20Poly1305 : CryptobaseUtils {
     $subKey = [XChaCha20Poly1305]::HChaCha20($key, $nonce[0..15])
     $nonce12 = [byte[]]@(0, 0, 0, 0) + $nonce[16..23]
     
-    return [ChaCha20Poly1305Pure]::Encrypt($subKey, $nonce12, $plainbytes, $aad)
+    return [ChaCha20Poly1305Managed]::Encrypt($subKey, $nonce12, $plainbytes, $aad)
   }
 
   static [byte[]] Decrypt([byte[]]$inputbytes, [byte[]]$key, [byte[]]$nonce) {
@@ -67,7 +67,7 @@ class XChaCha20Poly1305 : CryptobaseUtils {
     $subKey = [XChaCha20Poly1305]::HChaCha20($key, $nonce[0..15])
     $nonce12 = [byte[]]@(0, 0, 0, 0) + $nonce[16..23]
     
-    return [ChaCha20Poly1305Pure]::Decrypt($subKey, $nonce12, $inputbytes, $aad)
+    return [ChaCha20Poly1305Managed]::Decrypt($subKey, $nonce12, $inputbytes, $aad)
   }
 
   static [byte[]] Authenticate([byte[]]$plainbytes, [byte[]]$key, [byte[]]$nonce) {
