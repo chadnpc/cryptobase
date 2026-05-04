@@ -576,25 +576,43 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
 
 
     It "MLDsa should generate key pair" {
-      $mldsa = [MLDsa]::new()
-      $keyPair = $mldsa.GenerateKeyPair()
+      $keyPair = [MLDsaCore]::GenerateKeyPair()
       $keyPair.PublicKey.Length | Should BeGreaterThan 0
       $keyPair.PrivateKey.Length | Should BeGreaterThan 0
     }
 
     It "MLDsa should sign and verify" {
-      $mldsa = [MLDsa]::new()
-      $keyPair = $mldsa.GenerateKeyPair()
-      $signature = $mldsa.Sign($testData, $keyPair.PrivateKey)
-      $valid = $mldsa.Verify($testData, $signature, $keyPair.PublicKey)
+      $keyPair = [MLDsaCore]::GenerateKeyPair()
+      $signature = [MLDsaCore]::Sign($testData, $keyPair.PrivateKey)
+      $valid = [MLDsaCore]::Verify($testData, $signature, $keyPair.PublicKey)
       $valid | Should Be $true
     }
 
-    It "SLHDsa should generate key pair" {
-      $slhdsa = [SLHDsa]::new()
-      $keyPair = $slhdsa.GenerateKeyPair()
+    It "MLDsaBuilder should work correctly" {
+      $keyPair = [MLDsaBuilder]::Create().WithSecurityLevel([MLDsaSecurityLevel]::MLDsa44).GenerateKeyPair()
+      $signature = [MLDsaBuilder]::Create().WithKeyPair($keyPair).WithData($testData).Sign()
+      $valid = [MLDsaBuilder]::Create().WithPublicKey($keyPair.PublicKey).WithData($testData).Verify($signature)
+      $valid | Should Be $true
+    }
+
+    It "SlhDsa should generate key pair" {
+      $keyPair = [SlhDsaCore]::GenerateKeyPair()
       $keyPair.PublicKey.Length | Should BeGreaterThan 0
       $keyPair.PrivateKey.Length | Should BeGreaterThan 0
+    }
+
+    It "SlhDsa should sign and verify" {
+      $keyPair = [SlhDsaCore]::GenerateKeyPair()
+      $signature = [SlhDsaCore]::Sign($testData, $keyPair.PrivateKey)
+      $valid = [SlhDsaCore]::Verify($testData, $signature, $keyPair.PublicKey)
+      $valid | Should Be $true
+    }
+
+    It "SlhDsaBuilder should work correctly" {
+      $keyPair = [SlhDsaBuilder]::Create().WithSecurityLevel([SlhDsaSecurityLevel]::SlhDsa128f).GenerateKeyPair()
+      $signature = [SlhDsaBuilder]::Create().WithKeyPair($keyPair).WithData($testData).Sign()
+      $valid = [SlhDsaBuilder]::Create().WithPublicKey($keyPair.PublicKey).WithData($testData).Verify($signature)
+      $valid | Should Be $true
     }
   }
   #endregion
