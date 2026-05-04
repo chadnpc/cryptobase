@@ -44,6 +44,7 @@ param (
   [switch]$CleanUp
 )
 begin {
+  #requires -Version 7
   $TestResults = $null;
   $BuildOutDir = $PSScriptRoot
   $BuildOutput = [IO.DirectoryInfo]::New([IO.Path]::Combine($PSScriptRoot, 'BuildOutput', 'cryptobase'))
