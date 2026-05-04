@@ -79,7 +79,7 @@ Post-quantum hybrid encapsulation mode: **NIST P-256 ECDH + ML-KEM**, combined w
 
 ```powershell
 $recipientP256 = [Curve25519]::GenerateKeyPair()
-$mlKem = [MLKem]::new()
+$mlKem = [MLKemCore]::new()
 $recipientKem = $mlKem.GenerateKeyPair()
 $payload = [System.Text.Encoding]::UTF8.GetBytes("future-proof payload")
 
