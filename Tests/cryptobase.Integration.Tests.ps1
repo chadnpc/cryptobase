@@ -24,38 +24,44 @@ Describe "Integration tests: cryptobase" {
     
     It "SignMessage works through Invoke-CryptoBase pipeline" {
       $msg = "Pipeline secret"
-      $res = $msg | Invoke-CryptoBase -Method SignMessage
+      $res = $msg | cryptobase SignMessage
       $res.Signature.Count | Should BeGreaterThan 0
       [CryptoBase]::VerifyMessage($msg, $res.Signature, $res.PublicKey) | Should Be $true
     }
 
     It "ProtectData and UnprotectData pipeline with mocked password" {
-      Mock Read-Host { return (ConvertTo-SecureString "testpassword123" -AsPlainText -Force) }
-      
-      $plaintext = "Super secret data"
-      $protected = $plaintext | Invoke-CryptoBase -Method ProtectData
-      $protected.Count | Should BeGreaterThan 0
+      [CryptoBase]::_SkipReadHostPrompts = $true
+      [CryptoBase]::_Password = ConvertTo-SecureString "testpassword123" -AsPlainText -Force
 
-      $decryptedBytes = $protected | Invoke-CryptoBase -Method UnprotectData
-      $decryptedText = [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
-      
-      $decryptedText | Should Be $plaintext
+      try {
+        $plaintext = "Super secret data"
+        $protected = $plaintext | cryptobase ProtectData
+        $protected.Count | Should BeGreaterThan 0
+        $decryptedBytes = $protected | cryptobase UnprotectData
+        $decryptedText = [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
+        $decryptedText | Should Be $plaintext
+      }
+      finally {
+        [CryptoBase]::_SkipReadHostPrompts = $false
+        [CryptoBase]::_Password = $null
+      }
     }
 
     It "ObfuscateFile and DeobfuscateFile pipeline with mocked password" {
-      Mock Read-Host { return (ConvertTo-SecureString "obfuscation_pass" -AsPlainText -Force) }
+      [CryptoBase]::_SkipReadHostPrompts = $true
+      [CryptoBase]::_Password = ConvertTo-SecureString "obfuscation_pass" -AsPlainText -Force
       
       $testFile = "test_obfuscate.txt"
       $encFile = "test_obfuscate.txt.enc"
       Set-Content -Path $testFile -Value "File Content"
       
       try {
-        $testFile | Invoke-CryptoBase -Method ObfuscateFile
+        $testFile | cryptobase ObfuscateFile
         Test-Path $encFile | Should Be $true
         
         Remove-Item $testFile -Force
         
-        $encFile | Invoke-CryptoBase -Method DeobfuscateFile
+        $encFile | cryptobase DeobfuscateFile
         Test-Path $testFile | Should Be $true
         
         $decryptedContent = Get-Content $testFile -Raw
@@ -64,6 +70,8 @@ Describe "Integration tests: cryptobase" {
       finally {
         if (Test-Path $testFile) { Remove-Item $testFile -Force }
         if (Test-Path $encFile) { Remove-Item $encFile -Force }
+        [CryptoBase]::_SkipReadHostPrompts = $false
+        [CryptoBase]::_Password = $null
       }
     }
   }
