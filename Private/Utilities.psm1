@@ -15,6 +15,7 @@ using namespace System.Security.Cryptography.X509Certificates
 
 using module ./Enums.psm1
 using module ./Exceptions.psm1
+using module ./ChaCha20.psm1
 
 #Requires -Modules PsModuleBase
 
@@ -66,47 +67,6 @@ class Asn1Parser {
   }
 }
 
-# .SYNOPSIS
-#     PEM (Privacy-Enhanced Mail) format parser.
-# .DESCRIPTION
-#     Parses PEM-encoded data, extracting the base64-encoded content
-#     and identifying the type (CERTIFICATE, PUBLIC KEY, PRIVATE KEY, etc.).
-# .PARAMETER Content
-#     The PEM string.
-# .OUTPUTS
-#     Hashtable with Type and Data.
-# .EXAMPLE
-#     $pem = [PemParser]::Parse($pemString)
-# .NOTES
-#     PEM format is commonly used for certificates and keys.
-# class PemParser {
-#   PemParser() {}
-#
-#   # Instance Decode method (alias for static Parse, returns byte[])
-#   [byte[]] Decode([string]$Content) {
-#     $result = [PemParser]::Parse($Content)
-#     return $result.Data
-#   }
-#
-#   static [hashtable] Parse([string]$Content) {
-#     if ([string]::IsNullOrWhiteSpace($Content)) { throw [System.ArgumentException]::new('Content cannot be empty') }
-#
-#     $lines = $Content -split "\n" | Where-Object { $_ -notmatch '^-----' -and $_ -notmatch '^\s*$' }
-#     $base64 = ($lines -join '').Trim()
-#     $decoded = [System.Convert]::FromBase64String($base64)
-#
-#     # Identify type from header
-#     $type = 'UNKNOWN'
-#     if ($Content -match 'BEGIN\s+(\w+)\s+KEY')          { $type = $matches[1] }
-#     elseif ($Content -match 'BEGIN\s+CERTIFICATE')       { $type = 'CERTIFICATE' }
-#     elseif ($Content -match 'BEGIN\s+(\w+)\s+PRIVATE\s+KEY') { $type = $matches[1] + ' PRIVATE KEY' }
-#
-#     return @{ Type = $type; Data = $decoded; Raw = $Content }
-#   }
-# }
-
-# ... (omitting some content to reach line 689)
-# Wait, I'll just do separate chunks.
 
 # .SYNOPSIS
 #     PEM (Privacy-Enhanced Mail) format parser.
@@ -173,13 +133,10 @@ class PemParser {
 #     key derivation, encryption, and authentication.
 # .PARAMETER Password
 #     The password or key.
-
 # .PARAMETER Data
 #     The data to encrypt/decrypt.
-
 # .PARAMETER Salt
 #     The salt for key derivation.
-
 # .EXAMPLE
 #   $encrypted = [SecureBox]::Encrypt($password, $data)
 # .NOTES
@@ -225,7 +182,7 @@ class SecureBox {
     [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($nonce)
 
     # Encrypt with ChaCha20Poly1305
-    $ciphertext = [ChaCha20Poly1305]::Encrypt($_key, $nonce, $Data)
+    $ciphertext = [ChaCha20Poly1305Managed]::Encrypt($_key, $nonce, $Data)
 
     # Prepend salt and nonce
     $result = [byte[]]::new($Salt.Length + $nonce.Length + $ciphertext.Length)
@@ -253,21 +210,18 @@ class SecureBox {
     $_key = [HKDF]::DeriveKey($Password, $Salt, [System.Text.Encoding]::UTF8.GetBytes("SecureBox"), 32)
 
     # Decrypt
-    return [ChaCha20Poly1305]::Decrypt($_key, $Nonce, $Ciphertext)
+    return [ChaCha20Poly1305Managed]::Decrypt($_key, $Nonce, $Ciphertext)
   }
 }
 
 
 # .SYNOPSIS
 #     Secure array for handling sensitive data.
-
 # .DESCRIPTION
 #     SecureArray provides secure memory handling with automatic
 #     clearing of sensitive data when disposed.
-
 # .PARAMETER Size
 #     The size of the array in bytes.
-
 # .EXAMPLE
 #     $sa = [SecureArray]::new(32)
 #     $sa.SetData($sensitiveData)
