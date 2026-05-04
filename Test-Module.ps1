@@ -40,15 +40,15 @@ param (
     }
   )]
   [string]$version,
-  [switch]$skipBuildOutputTest,
+  [switch]$SkipBuildOutput,
   [switch]$CleanUp
 )
 begin {
   $TestResults = $null;
   $BuildOutDir = $PSScriptRoot
   $BuildOutput = [IO.DirectoryInfo]::New([IO.Path]::Combine($PSScriptRoot, 'BuildOutput', 'cryptobase'))
-  if (!$BuildOutput.Exists -and !$skipBuildOutputTest) {
-    Write-Warning "NO_Build_OutPut | Please make sure to Build the module successfully first before running Test-Module.ps1 or use -skipBuildOutputTest switch to skip this check"
+  if (!$BuildOutput.Exists -and !$SkipBuildOutput) {
+    Write-Warning "NO_Build_OutPut | Please make sure to Build the module successfully first before running Test-Module.ps1 or use -SkipBuildOutput switch to skip this check"
     throw [DirectoryNotFoundException]::New("Cannot find path '$($BuildOutput.FullName)' because it does not exist.")
   }
   if ($BuildOutput.Exists) {
@@ -69,7 +69,7 @@ process {
   Write-Host "[0/3] Checking Prerequisites ..." -ForegroundColor Green
   if (!$BuildOutDir.Exists) {
     $msg = 'Directory "{0}" Not Found.' -f ([IO.Path]::GetRelativePath($PSScriptRoot, $BuildOutDir))
-    if ($skipBuildOutputTest) {
+    if ($SkipBuildOutput) {
       Write-Host $msg -ForegroundColor Yellow
     }
     else {
@@ -87,7 +87,7 @@ process {
   $missingTestFiles = $testFiles.Where({ !$_.Exists })
   if ($missingTestFiles.count -gt 0) { throw [FileNotFoundException]::new("One or more missing TestFiles! $($testFiles.BaseName -join ', ')") }
   Write-Host "[1/2] Testing ModuleManifest ..." -ForegroundColor Green
-  if (!$skipBuildOutputTest) {
+  if (!$SkipBuildOutput) {
     Test-ModuleManifest -Path $manifestFile.FullName -ErrorAction Stop -Verbose:$false
   }
   Write-Host "[2/2] Running all test files" -ForegroundColor Yellow
