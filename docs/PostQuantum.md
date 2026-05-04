@@ -9,7 +9,7 @@ Standardized as FIPS 203 (formerly Kyber). Used for establishing a shared secret
 
 #### Usage
 ```powershell
-$kem = [MLKem]::new()
+$kem = [MLKemCore]::new()
 
 # Generate a new keypair
 $keys = $kem.GenerateKeyPair()
