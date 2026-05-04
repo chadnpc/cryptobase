@@ -21,18 +21,18 @@ using namespace System
 #   $nonce = [byte[]]::new(12)
 #   [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($key)
 #   [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($nonce)
-#   $ciphertext = [ChaCha20Poly1305Pure]::Encrypt($key, $nonce, [System.Text.Encoding]::UTF8.GetBytes("Hello"))
+#   $ciphertext = [ChaCha20Poly1305Managed]::Encrypt($key, $nonce, [System.Text.Encoding]::UTF8.GetBytes("Hello"))
 # .NOTES
 #   Defined in RFC 8439. Uses .NET native implementation when available.
-class ChaCha20Poly1305Pure {
+class ChaCha20Poly1305Managed {
   hidden [byte[]] $Key
 
-  ChaCha20Poly1305Pure() {
+  ChaCha20Poly1305Managed() {
     $this.Key = [byte[]]::new(32)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($this.Key)
   }
 
-  ChaCha20Poly1305Pure([byte[]]$key) {
+  ChaCha20Poly1305Managed([byte[]]$key) {
     if ($null -eq $key -or $key.Length -ne 32) { throw [System.ArgumentException]::new("Key must be 32 bytes") }
     $this.Key = $key
   }
@@ -46,33 +46,33 @@ class ChaCha20Poly1305Pure {
   static [void] QuarterRound([uint[]]$state, [int]$a, [int]$b, [int]$c, [int]$d) {
     $state[$a] = [uint](([long]$state[$a] + [long]$state[$b]) -band 4294967295)
     $state[$d] = $state[$d] -bxor $state[$a]
-    $state[$d] = [ChaCha20Poly1305Pure]::RotateLeft($state[$d], 16)
+    $state[$d] = [ChaCha20Poly1305Managed]::RotateLeft($state[$d], 16)
 
     $state[$c] = [uint](([long]$state[$c] + [long]$state[$d]) -band 4294967295)
     $state[$b] = $state[$b] -bxor $state[$c]
-    $state[$b] = [ChaCha20Poly1305Pure]::RotateLeft($state[$b], 12)
+    $state[$b] = [ChaCha20Poly1305Managed]::RotateLeft($state[$b], 12)
 
     $state[$a] = [uint](([long]$state[$a] + [long]$state[$b]) -band 4294967295)
     $state[$d] = $state[$d] -bxor $state[$a]
-    $state[$d] = [ChaCha20Poly1305Pure]::RotateLeft($state[$d], 8)
+    $state[$d] = [ChaCha20Poly1305Managed]::RotateLeft($state[$d], 8)
 
     $state[$c] = [uint](([long]$state[$c] + [long]$state[$d]) -band 4294967295)
     $state[$b] = $state[$b] -bxor $state[$c]
-    $state[$b] = [ChaCha20Poly1305Pure]::RotateLeft($state[$b], 7)
+    $state[$b] = [ChaCha20Poly1305Managed]::RotateLeft($state[$b], 7)
   }
 
   static [void] ChaCha20Block([byte[]]$keystream, [uint[]]$state, [int]$offset) {
     [uint[]]$workingState = [uint[]]::new(16)
     [Array]::Copy($state, $workingState, 16)
     for ($i = 0; $i -lt 10; $i++) {
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 0, 4, 8, 12)
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 1, 5, 9, 13)
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 2, 6, 10, 14)
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 3, 7, 11, 15)
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 0, 5, 10, 15)
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 1, 6, 11, 12)
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 2, 7, 8, 13)
-      [ChaCha20Poly1305Pure]::QuarterRound($workingState, 3, 4, 9, 14)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 0, 4, 8, 12)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 1, 5, 9, 13)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 2, 6, 10, 14)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 3, 7, 11, 15)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 0, 5, 10, 15)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 1, 6, 11, 12)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 2, 7, 8, 13)
+      [ChaCha20Poly1305Managed]::QuarterRound($workingState, 3, 4, 9, 14)
     }
     for ($i = 0; $i -lt 16; $i++) {
       $workingState[$i] = [uint](([long]$workingState[$i] + [long]$state[$i]) -band 4294967295)
@@ -149,7 +149,7 @@ class ChaCha20Poly1305Pure {
     if ($null -eq $plainbytes) { throw [System.ArgumentNullException]::new("plaintext") }
     $nonce = [byte[]]::new(12)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
-    $ciphertextWithTag = [ChaCha20Poly1305Pure]::Encrypt($this.Key, $nonce, $plainbytes, [byte[]]::new(0))
+    $ciphertextWithTag = [ChaCha20Poly1305Managed]::Encrypt($this.Key, $nonce, $plainbytes, [byte[]]::new(0))
     $result = [byte[]]::new(12 + $ciphertextWithTag.Length)
     [Array]::Copy($nonce, 0, $result, 0, 12)
     [Array]::Copy($ciphertextWithTag, 0, $result, 12, $ciphertextWithTag.Length)
@@ -163,7 +163,7 @@ class ChaCha20Poly1305Pure {
     [Array]::Copy($ciphertext, 0, $nonce, 0, 12)
     $rest = [byte[]]::new($ciphertext.Length - 12)
     [Array]::Copy($ciphertext, 12, $rest, 0, $rest.Length)
-    return [ChaCha20Poly1305Pure]::Decrypt($this.Key, $nonce, $rest, [byte[]]::new(0))
+    return [ChaCha20Poly1305Managed]::Decrypt($this.Key, $nonce, $rest, [byte[]]::new(0))
   }
 
   static [byte[]] Encrypt([byte[]]$Key, [byte[]]$Nonce, [byte[]]$plainbytes, [byte[]]$AssociatedData) {
@@ -173,8 +173,8 @@ class ChaCha20Poly1305Pure {
     if ($null -eq $AssociatedData) { $AssociatedData = [byte[]]::new(0) }
 
     $block0 = [byte[]]::new(64)
-    $state0 = [ChaCha20Poly1305Pure]::InitializeState($Key, $Nonce, 0)
-    [ChaCha20Poly1305Pure]::ChaCha20Block($block0, $state0, 0)
+    $state0 = [ChaCha20Poly1305Managed]::InitializeState($Key, $Nonce, 0)
+    [ChaCha20Poly1305Managed]::ChaCha20Block($block0, $state0, 0)
     $poly1305Key = [byte[]]::new(32)
     [Array]::Copy($block0, 0, $poly1305Key, 0, 32)
 
@@ -183,10 +183,10 @@ class ChaCha20Poly1305Pure {
     $keystream = [byte[]]::new(64)
     $blocks = [Math]::Ceiling($ciphertextCount / 64.0)
 
-    $state1 = [ChaCha20Poly1305Pure]::InitializeState($Key, $Nonce, 1)
+    $state1 = [ChaCha20Poly1305Managed]::InitializeState($Key, $Nonce, 1)
 
     for ($i = 0; $i -lt $blocks; $i++) {
-      [ChaCha20Poly1305Pure]::ChaCha20Block($keystream, $state1, 0)
+      [ChaCha20Poly1305Managed]::ChaCha20Block($keystream, $state1, 0)
       $state1[12]++
       $offset = $i * 64
       $len = [Math]::Min(64, $ciphertextCount - $offset)
@@ -216,7 +216,7 @@ class ChaCha20Poly1305Pure {
     [Array]::Copy([System.BitConverter]::GetBytes([uint64]$ciphertextCount), 0, $msg, $msgOffset + 8, 8)
 
     $tag = [byte[]]::new(16)
-    [ChaCha20Poly1305Pure]::ComputePoly1305Mac($tag, $msg, $poly1305Key)
+    [ChaCha20Poly1305Managed]::ComputePoly1305Mac($tag, $msg, $poly1305Key)
 
     $result = [byte[]]::new($ciphertext.Length + $tag.Length)
     [Array]::Copy($ciphertext, 0, $result, 0, $ciphertext.Length)
@@ -231,8 +231,8 @@ class ChaCha20Poly1305Pure {
     if ($null -eq $AssociatedData) { $AssociatedData = [byte[]]::new(0) }
 
     $block0 = [byte[]]::new(64)
-    $state0 = [ChaCha20Poly1305Pure]::InitializeState($Key, $Nonce, 0)
-    [ChaCha20Poly1305Pure]::ChaCha20Block($block0, $state0, 0)
+    $state0 = [ChaCha20Poly1305Managed]::InitializeState($Key, $Nonce, 0)
+    [ChaCha20Poly1305Managed]::ChaCha20Block($block0, $state0, 0)
     $poly1305Key = [byte[]]::new(32)
     [Array]::Copy($block0, 0, $poly1305Key, 0, 32)
 
@@ -264,7 +264,7 @@ class ChaCha20Poly1305Pure {
     [Array]::Copy([System.BitConverter]::GetBytes([uint64]$actualCiphertextLen), 0, $msg, $msgOffset + 8, 8)
 
     $expectedTag = [byte[]]::new(16)
-    [ChaCha20Poly1305Pure]::ComputePoly1305Mac($expectedTag, $msg, $poly1305Key)
+    [ChaCha20Poly1305Managed]::ComputePoly1305Mac($expectedTag, $msg, $poly1305Key)
 
     for ($i = 0; $i -lt 16; $i++) {
       if ($expectedTag[$i] -ne $receivedTag[$i]) {
@@ -276,9 +276,9 @@ class ChaCha20Poly1305Pure {
     $keystream = [byte[]]::new(64)
     $blocks = [Math]::Ceiling($actualCiphertextLen / 64.0)
 
-    $state1 = [ChaCha20Poly1305Pure]::InitializeState($Key, $Nonce, 1)
+    $state1 = [ChaCha20Poly1305Managed]::InitializeState($Key, $Nonce, 1)
     for ($i = 0; $i -lt $blocks; $i++) {
-      [ChaCha20Poly1305Pure]::ChaCha20Block($keystream, $state1, 0)
+      [ChaCha20Poly1305Managed]::ChaCha20Block($keystream, $state1, 0)
       $state1[12]++
       $offset = $i * 64
       $len = [Math]::Min(64, $actualCiphertextLen - $offset)
