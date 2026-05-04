@@ -28,7 +28,7 @@ Import-Module cryptobase
 
 ```PowerShell
 Import-Module ./cryptobase.psd1
-./Test-Module.ps1 -skipBuildOutputTest
+./Test-Module.ps1 -SkipBuildOutput
 ```
 
 or test the `./BuildOutput/`
