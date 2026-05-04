@@ -635,9 +635,10 @@ class CryptobaseUtils : PsModuleBase {
   static [string] $caller
   static [byte[]] $counter
   static [EncryptionScope] $Scope = 'User'
+  static hidden [bool] $_SkipReadHostPrompts = $false
   static hidden [ValidateNotNull()][byte[]] $_salt = [Convert]::FromBase64String( 'bz07LmY5XiNkXW1WQjxdXw==')
   static hidden [ValidateNotNull()][byte[]] $_bytes
-  static hidden [ValidateNotNull()][securestring] $_Password
+  static hidden [AllowNull()][securestring] $_Password
   static hidden [ValidateNotNull()][CryptoAlgorithm] $_Algorithm
 
   CryptobaseUtils() {}
