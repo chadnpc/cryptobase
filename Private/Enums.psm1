@@ -189,3 +189,12 @@ enum MLKemSecurityLevel {
   MLKem768
   MLKem1024
 }
+
+enum SlhDsaSecurityLevel {
+  SlhDsa128s
+  SlhDsa128f
+  SlhDsa192s
+  SlhDsa192f
+  SlhDsa256s
+  SlhDsa256f
+}
