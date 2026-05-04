@@ -552,15 +552,13 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   #region Post-Quantum Tests
   Context "Post-Quantum Cryptography" {
     It "MLKem should generate key pair" {
-      $mlkem = [MLKem]::new()
-      $keyPair = $mlkem.GenerateKeyPair()
+      $keyPair = [MLKem]::GenerateKeyPair()
       $keyPair.PublicKey.Length | Should BeGreaterThan 0
       $keyPair.PrivateKey.Length | Should BeGreaterThan 0
     }
 
     It "MLKem should encapsulate and decapsulate" {
-      $mlkem = [MLKem]::new()
-      $keyPair = $mlkem.GenerateKeyPair()
+      $keyPair = [MLKem]::GenerateKeyPair()
       $encap = $mlkem.Encapsulate($keyPair.PublicKey)
       $shared = $mlkem.Decapsulate($encap.Ciphertext, $keyPair.PrivateKey)
       $shared | Should Be $encap.SharedSecret
