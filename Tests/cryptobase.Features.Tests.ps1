@@ -23,8 +23,8 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   Context "Hashing Classes: SHA3, Keccak, BLAKE3" {
     It "IdentityHash should return input bytes unchanged" {
       $ih = [IdentityHash]::new()
-      $res = $ih.ComputeHash([byte[]]$testData)
-      [BitConverter]::ToString($res) | Should Be "68-65-6C-6C-6F"
+      $res = $ih.ComputeHash([byte[]]$testDataShort)
+      [BitConverter]::ToString($res) | Should Be "74-65-73-74"
     }
 
     It "DoubleSha256 should return a 256-bit hash" {
@@ -78,7 +78,7 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
     }
 
     It "SHAKE256 should produce variable length output" {
-      $hash = [SHAKE256]::ComputeHash([byte[]]$testData, 64)
+      $hash = [SHAKE256Managed]::ComputeHash([byte[]]$testData, 64)
       $hash.Length | Should Be 64
     }
 
@@ -453,14 +453,14 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   #region ChaCha20Poly1305 Tests
   Context "ChaCha20-Poly1305 AEAD" {
     It "ChaCha20Poly1305 should encrypt and decrypt" {
-      $chacha = [ChaCha20Poly1305]::new()
+      $chacha = [ChaCha20Poly1305Managed]::new()
       $cipherBytes = $chacha.Encrypt($testData)
       $decrypted = $chacha.Decrypt($cipherBytes)
       $decrypted | Should Be $testData
     }
 
     It "ChaCha20Poly1305 should reject tampered ciphertext" {
-      $chacha = [ChaCha20Poly1305]::new()
+      $chacha = [ChaCha20Poly1305Managed]::new()
       $cipherBytes = $chacha.Encrypt($testData)
       $tampered = $cipherBytes.Clone()
       $tampered[0] = ($tampered[0] + 1) % 256
