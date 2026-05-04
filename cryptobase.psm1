@@ -159,7 +159,8 @@ EXAMPLES
     $aes = [System.Security.Cryptography.AesGcm]::new($key)
     try {
       $aes.Encrypt($nonce, $plainbytes, $ciphertext, $tag, $aad)
-    } finally {
+    }
+    finally {
       $aes.Dispose()
       [Array]::Clear($passBytes, 0, $passBytes.Length)
       [Array]::Clear($key, 0, $key.Length)
@@ -196,7 +197,8 @@ EXAMPLES
     $aes = [System.Security.Cryptography.AesGcm]::new($aesKey)
     try {
       $aes.Encrypt($aesNonce, $plainbytes, $innerCiphertext, $aesTag)
-    } finally {
+    }
+    finally {
       $aes.Dispose()
       [Array]::Clear($aesKey, 0, $aesKey.Length)
     }
@@ -243,7 +245,8 @@ EXAMPLES
     try {
       $aes.Decrypt($aesNonce, $innerCiphertext, $aesTag, $plainbytes)
       return $plainbytes
-    } finally {
+    }
+    finally {
       $aes.Dispose()
       [Array]::Clear($aesKey, 0, $aesKey.Length)
     }
@@ -269,7 +272,7 @@ EXAMPLES
     $ephemeralCurve = [Curve25519]::GenerateKeyPair()
     $classicShared = [Curve25519]::DeriveSharedSecret($ephemeralCurve.PrivateKey, $recipientP256Pub)
 
-    $mlKem = [MLKem]::new()
+    $mlKem = [MLKemCore]::new()
     $kemResult = $mlKem.Encapsulate($recipientKemPub)
     $pqcShared = $kemResult.SharedSecret
 
@@ -323,7 +326,8 @@ EXAMPLES
     try {
       $aes.Decrypt($nonce, $ciphertext, $tag, $plainbytes, $aad)
       return $plainbytes
-    } finally {
+    }
+    finally {
       $aes.Dispose()
       [Array]::Clear($passBytes, 0, $passBytes.Length)
       [Array]::Clear($key, 0, $key.Length)
@@ -359,7 +363,7 @@ EXAMPLES
   static [void] DeobfuscateFile([string]$inputPath) {
     $outPath = $inputPath -replace '\.enc$', ''
     if ($outPath -eq $inputPath) {
-        $outPath = "$inputPath.dec"
+      $outPath = "$inputPath.dec"
     }
     [CryptoBase]::DeobfuscateFile($inputPath, $outPath, [xconvert]::ToSecurestring([CryptoBase]::ReadSecureString("Password")))
   }
@@ -387,7 +391,8 @@ EXAMPLES
     $mdp = [Marshal]::SecureStringToBSTR($ss)
     try {
       $result = [Marshal]::PtrToStringBSTR($mdp)
-    } finally {
+    }
+    finally {
       [Marshal]::ZeroFreeBSTR($mdp)
       $ss.Dispose()
     }
@@ -404,7 +409,7 @@ $typestoExport = @(
   [EncryptionScope], [keyStoreMode], [KeyExportPolicy], [KeyProtection], [KeyUsage], [X509ContentType], [ECCurveName], [SdCategory], [ExpType], [CertStoreName], [CryptoAlgorithm], [RSAPadding], [Compression], [CredFlags], [CredType], [CredentialPersistence], [HashType], [AsymmetricAlgorithm], [KeyFormat], [KeySize], [ArmorType],
   [InvalidArgumentException], [CredentialNotFoundException], [IntegrityCheckFailedException], [InvalidPasswordException], [SaltParseException], [BcryptAuthenticationException], [HashInformationException], [KeypairException], [KeyGenerationException], [KeyImportException], [FileMonitor], [Hc128], [Hc256], [HKDF], [Keypair],
   [NamedKeypair], [KeypairGenerationResult], [KeypairHelper], [KeypairGen], [KeypairManager], [KMAC256], [MD5], [Expiration], [HashParser], [HashInformation], [HashFormatDescriptor], [CipherObject], [SecretStore], [KSFConfigType], [opaqueServerLoginState], [opaqueClientRegistrationState], [opaqueClientLoginState], [opaqueKSFConfig],
-  [opaqueOpaqueServer], [opaqueOpaqueClient], [KSFConfig], [OpaqueServer], [OpaqueClient], [OPAQUE], [OpenPgp], [OTPKIT], [Argon2id], [Argon2i], [Argon2d], [Scrypt], [Pbkdf2], [MLKem], [MLDsa], [SLHDsa], [RabbitState], [Rabbit], [RSA], [S2KType], [S2K], [Secp256k1], [Keccak], [KeccakManaged], [IdentityHash], [DoubleSha256],
+  [opaqueOpaqueServer], [opaqueOpaqueClient], [KSFConfig], [OpaqueServer], [OpaqueClient], [OPAQUE], [OpenPgp], [OTPKIT], [Argon2id], [Argon2i], [Argon2d], [Scrypt], [Pbkdf2], [MLKemSecurityLevel], [MLKemKeyPair], [MLKemEncapsulationResult], [MLKemCore], [MLKemBuilder], [MLDsa], [SLHDsa], [RabbitState], [Rabbit], [RSA], [S2KType], [S2K], [Secp256k1], [Keccak], [KeccakManaged], [IdentityHash], [DoubleSha256],
   [SHA3256], [SHA3384], [SHA3512], [SHAKE128Managed], [SHAKE256Managed], [KMAC128], [FipsHmacSha256], [BLAKE3], [TripleDES], [Asn1Parser], [PemParser], [SecureBox], [SecureArray], [NoiseProtocol], [VOPRF], [BitwUtil], [Shuffl3r], [SignatureUtils], [CryptobaseUtils], [VaultClient], [X509], [XChaCha20Poly1305], [XOR], [XSalsa20],
   [CryptoBase]
 )
@@ -413,7 +418,8 @@ $TypeAcceleratorsClass = [PsObject].Assembly.GetType('System.Management.Automati
 foreach ($Type in $typestoExport) {
   try {
     $TypeAcceleratorsClass::Add($Type.FullName, $Type)
-  } catch {
+  }
+  catch {
     # Ignore if already exists
     $null
   }
@@ -434,7 +440,8 @@ foreach ($file in $scripts) {
   try {
     if ([string]::IsNullOrWhiteSpace($file.fullname)) { continue }
     . "$($file.fullname)"
-  } catch {
+  }
+  catch {
     Write-Warning "Failed to import function $($file.BaseName): $_"
     $host.UI.WriteErrorLine($_)
   }
