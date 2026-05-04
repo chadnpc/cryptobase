@@ -74,7 +74,65 @@ class CryptoBase : CryptobaseUtils {
   CryptoBase() {}
 
   static [string] GetHelp() {
-    return "this is help info"
+    return @"
+NAME
+    CryptoBase (Invoke-CryptoBase) - Cryptographic utility tool
+
+SYNOPSIS
+    Invoke-CryptoBase <Method> [-InputObject <Object>]
+    <Object> | Invoke-CryptoBase <Method>
+
+DESCRIPTION
+    Provides high-level convenience methods for common cryptographic tasks such as 
+    encryption, decryption, signing, and file obfuscation. When using pipeline 
+    input, you can use the single-parameter method overloads which will prompt 
+    you for any required passwords interactively.
+
+METHODS
+    GetHelp
+        Shows this help information.
+
+    ProtectData
+        Encrypts data using Argon2id and AES-256-GCM.
+        Pipeline: "secret" | CryptoBase ProtectData
+
+    UnprotectData
+        Decrypts data previously encrypted with ProtectData.
+        Pipeline: `$encryptedBytes | CryptoBase UnprotectData
+
+    ProtectDataCascade
+        Paranoid cascade mode encryption (AES-256-GCM + XChaCha20-Poly1305).
+        Pipeline: "secret" | CryptoBase ProtectDataCascade
+
+    UnprotectDataCascade
+        Decrypts cascade mode payloads.
+        Pipeline: `$encryptedBytes | CryptoBase UnprotectDataCascade
+
+    SignMessage
+        Signs a message using Secp256k1 and returns the signature and keys.
+        Pipeline: "message" | CryptoBase SignMessage
+
+    ObfuscateFile
+        Obfuscates a file with CRC24 integrity. Prompts for password.
+        Pipeline: "source.txt" | CryptoBase ObfuscateFile
+
+    DeobfuscateFile
+        Deobfuscates a file. Prompts for password.
+        Pipeline: "source.txt.enc" | CryptoBase DeobfuscateFile
+
+EXAMPLES
+    "This is my secret message" | CryptoBase SignMessage
+    "Sensitive Data" | CryptoBase ProtectData > secret.bin
+    Get-Content secret.bin -AsByteStream | CryptoBase UnprotectData
+"@
+  }
+
+  static [byte[]] ProtectData([string]$plaintext) {
+    return [CryptoBase]::ProtectData([Encoding]::UTF8.GetBytes($plaintext), [CryptoBase]::ReadSecureString())
+  }
+
+  static [byte[]] ProtectData([byte[]]$plainbytes) {
+    return [CryptoBase]::ProtectData($plainbytes, [CryptoBase]::ReadSecureString())
   }
 
   static [byte[]] ProtectData([byte[]]$plainbytes, [string]$passw0rd) {
@@ -110,6 +168,14 @@ class CryptoBase : CryptobaseUtils {
     return [byte[]]@(0x01) + $salt + $nonce + $tag + $ciphertext
   }
 
+  static [byte[]] ProtectDataCascade([string]$plaintext) {
+    return [CryptoBase]::ProtectDataCascade([Encoding]::UTF8.GetBytes($plaintext), [xconvert]::ToSecurestring([CryptoBase]::ReadSecureString()))
+  }
+
+  static [byte[]] ProtectDataCascade([byte[]]$plainbytes) {
+    return [CryptoBase]::ProtectDataCascade($plainbytes, [xconvert]::ToSecurestring([CryptoBase]::ReadSecureString()))
+  }
+
   static [byte[]] ProtectDataCascade([byte[]]$plainbytes, [securestring]$password) {
     $salt = [byte[]]::new(32)
     [RandomNumberGenerator]::Fill($salt)
@@ -143,6 +209,10 @@ class CryptoBase : CryptobaseUtils {
     [Array]::Clear($xchachaKey, 0, $xchachaKey.Length)
 
     return [byte[]]@(0x02) + $salt + $xNonce + $outerPayload
+  }
+
+  static [byte[]] UnprotectDataCascade([byte[]]$protectedBytes) {
+    return [CryptoBase]::UnprotectDataCascade($protectedBytes, [xconvert]::ToSecurestring([CryptoBase]::ReadSecureString()))
   }
 
   static [byte[]] UnprotectDataCascade([byte[]]$protectedBytes, [securestring]$password) {
@@ -219,6 +289,10 @@ class CryptoBase : CryptobaseUtils {
     }
   }
 
+  static [byte[]] UnprotectData([byte[]]$protectedBytes) {
+    return [CryptoBase]::UnprotectData($protectedBytes, [CryptoBase]::ReadSecureString())
+  }
+
   static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$passw0rd) {
     return [CryptoBase]::UnprotectData($protectedBytes, [xconvert]::ToSecurestring($passw0rd), $null)
   }
@@ -271,11 +345,23 @@ class CryptoBase : CryptobaseUtils {
     return [Secp256k1]::Verify($data, $signature, $publicKey)
   }
 
+  static [void] ObfuscateFile([string]$inputPath) {
+    [CryptoBase]::ObfuscateFile($inputPath, "$inputPath.enc", [xconvert]::ToSecurestring([CryptoBase]::ReadSecureString()))
+  }
+
   static [void] ObfuscateFile([string]$inputPath, [string]$outputPath, [securestring]$password) {
     $data = [File]::ReadAllBytes($inputPath)
     $wrapped = [CryptoBase]::ProtectData($data, $password)
     $fileCrc = [Crc24]::ComputeToBytes($wrapped)
     [File]::WriteAllBytes($outputPath, $fileCrc + $wrapped)
+  }
+
+  static [void] DeobfuscateFile([string]$inputPath) {
+    $outPath = $inputPath -replace '\.enc$', ''
+    if ($outPath -eq $inputPath) {
+        $outPath = "$inputPath.dec"
+    }
+    [CryptoBase]::DeobfuscateFile($inputPath, $outPath, [xconvert]::ToSecurestring([CryptoBase]::ReadSecureString()))
   }
 
   static [void] DeobfuscateFile([string]$inputPath, [string]$outputPath, [securestring]$password) {
