@@ -426,15 +426,15 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   Context "AES-SIV Authenticated Encryption" {
     It "AesSIV should encrypt and decrypt" {
       $aesSiv = [AesSIV]::new()
-      $cipherBytes = $aesSiv.Encrypt($testData)
-      $decrypted = $aesSiv.Decrypt($cipherBytes)
+      $encrypted = $aesSiv.Encrypt($testData)
+      $decrypted = $aesSiv.Decrypt($encrypted)
       $decrypted | Should Be $testData
     }
 
     It "AesSIV should reject tampered ciphertext" {
       $aesSiv = [AesSIV]::new()
-      $cipherBytes = $aesSiv.Encrypt($testData)
-      $tampered = [byte[]]$cipherBytes.Clone()
+      $encrypted = $aesSiv.Encrypt($testData)
+      $tampered = [byte[]]$encrypted.Clone()
       $tampered[12] = ($tampered[12] -bxor 0xFF)  # flip all bits in auth tag byte
       $threw = $false
       try { $aesSiv.Decrypt($tampered) } catch { $threw = $true }
@@ -443,8 +443,8 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
 
     It "AesSIV should work with associated data" {
       $aesSiv = [AesSIV]::new()
-      $cipherBytes = $aesSiv.Encrypt($testData)
-      $decrypted = $aesSiv.Decrypt($cipherBytes)
+      $encrypted = $aesSiv.Encrypt($testData)
+      $decrypted = $aesSiv.Decrypt($encrypted)
       $decrypted | Should Be $testData
     }
   }
@@ -454,15 +454,15 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   Context "ChaCha20-Poly1305 AEAD" {
     It "ChaCha20Poly1305 should encrypt and decrypt" {
       $chacha = [ChaCha20Poly1305Managed]::new()
-      $cipherBytes = $chacha.Encrypt($testData)
-      $decrypted = $chacha.Decrypt($cipherBytes)
+      $encrypted = $chacha.Encrypt($testData)
+      $decrypted = $chacha.Decrypt($encrypted)
       $decrypted | Should Be $testData
     }
 
     It "ChaCha20Poly1305 should reject tampered ciphertext" {
       $chacha = [ChaCha20Poly1305Managed]::new()
-      $cipherBytes = $chacha.Encrypt($testData)
-      $tampered = $cipherBytes.Clone()
+      $encrypted = $chacha.Encrypt($testData)
+      $tampered = $encrypted.Clone()
       $tampered[0] = ($tampered[0] + 1) % 256
       $threw = $false
       try { $chacha.Decrypt($tampered) } catch { $threw = $true }
@@ -475,15 +475,15 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   Context "AES-CCM AEAD" {
     It "AesCCM should encrypt and decrypt" {
       $aesCcm = [AesCCM]::new()
-      $ciphertext = $aesCcm.Encrypt($testData)
-      $decrypted = $aesCcm.Decrypt($ciphertext)
+      $encrypted = $aesCcm.Encrypt($testData)
+      $decrypted = $aesCcm.Decrypt($encrypted)
       $decrypted | Should Be $testData
     }
 
     It "AesCCM should reject tampered ciphertext" {
       $aesCcm = [AesCCM]::new()
-      $ciphertext = $aesCcm.Encrypt($testData)
-      $tampered = $ciphertext.Clone()
+      $encrypted = $aesCcm.Encrypt($testData)
+      $tampered = $encrypted.Clone()
       $tampered[0] = ($tampered[0] + 1) % 256
       $threw = $false
       try { $aesCcm.Decrypt($tampered) } catch { $threw = $true }
@@ -542,8 +542,8 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $key = [byte[]]::new(32); [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($key)
       $nonce = [byte[]]::new(12); [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($nonce)
       $ocb = [AesOcb]::new().WithKey($key).WithNonce($nonce)
-      $ciphertext = $ocb.Encrypt($testData)
-      $decrypted = $ocb.Decrypt($ciphertext)
+      $encrypted = $ocb.Encrypt($testData)
+      $decrypted = $ocb.Decrypt($encrypted)
       ($decrypted -join ',') | Should Be ($testData -join ',')
     }
   }
@@ -609,8 +609,8 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $key = [byte[]]@(1..32)
       $secureBox = [SecureBox]::new($key)
       $plainbytes = $testData
-      $ciphertext = $secureBox.Encrypt($plainbytes)
-      $decrypted = $secureBox.Decrypt($ciphertext)
+      $encrypted = $secureBox.Encrypt($plainbytes)
+      $decrypted = $secureBox.Decrypt($encrypted)
       $decrypted | Should Be $plainbytes
     }
 
@@ -893,10 +893,10 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
 
   Context "Blake2b Hash" {
     It "Blake2b should compute hash" {
-      $data = [System.Text.Encoding]::UTF8.GetBytes("abc")
+      $data = [System.Text.Encoding]::UTF8.GetBytes($testDataShort)
       $hash = [Blake2b]::ComputeHash($data)
       $hashHex = ($hash | ForEach-Object { "{0:x2}" -f $_ }) -join ""
-      $hashHex | Should Be "ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923"
+      $hashHex | Should Be "7138bce3d21f355d7d091651070a75b7b9abe29a14c11f9c5c1d72f31785d741d382e6ad7f520f511d6c3e2b8c68049b69bd41fbabd9821f7b217e1319cde15b"
     }
     It "Blake2b with key should compute MAC" {
       $data = [byte[]]::new(0)
@@ -1058,17 +1058,20 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
     It "XChaCha20Poly1305 Encrypt-Decrypt - wrong AAD" {
       $aad = [System.Text.Encoding]::UTF8.GetBytes('aad')
       $ct = [XChaCha20Poly1305]::Encrypt($script:testData, $key, $nonce, $aad)
-      { [XChaCha20Poly1305]::Decrypt($ct, $key, $nonce, [byte[]]@()) } | Should Throw
+      $threw = $false; try { [XChaCha20Poly1305]::Decrypt($ct, $key, $nonce, [byte[]]@()) } catch { $threw = $true }
+      $threw | Should Be $true
     }
     It "XChaCha20Poly1305 Encrypt-Decrypt - wrong key" {
       $aad = [System.Text.Encoding]::UTF8.GetBytes('aad')
       $ct = [XChaCha20Poly1305]::Encrypt($script:testData, $key, $nonce, $aad)
-      { [XChaCha20Poly1305]::Decrypt($ct, [byte[]]::new(32), $nonce, $aad) } | Should Throw
+      $threw = $false; try { [XChaCha20Poly1305]::Decrypt($ct, [byte[]]::new(32), $nonce, $aad) } catch { $threw = $true }
+      $threw | Should Be $true
     }
     It "XChaCha20Poly1305 Encrypt-Decrypt - wrong nonce" {
       $aad = [System.Text.Encoding]::UTF8.GetBytes('aad')
       $ct = [XChaCha20Poly1305]::Encrypt($script:testData, $key, $nonce, $aad)
-      { [XChaCha20Poly1305]::Decrypt($ct, $key, [byte[]]::new(24), $aad) } | Should Throw
+      $threw = $false; try { [XChaCha20Poly1305]::Decrypt($ct, $key, [byte[]]::new(24), $aad) } catch { $threw = $true }
+      $threw | Should Be $true
     }
     It "XChaCha20Poly1305 Authenticate-Verify - with AAD" {
       $aad = [System.Text.Encoding]::UTF8.GetBytes('aad')

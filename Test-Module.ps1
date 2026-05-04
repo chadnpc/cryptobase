@@ -57,7 +57,7 @@ begin {
       $version = $BuildOutput.GetDirectories().Name -as 'version[]' | Select-Object -Last 1
     }
     $BuildOutDir = Resolve-Path $([IO.Path]::Combine($PSScriptRoot, 'BuildOutput', 'cryptobase', $version)) -ErrorAction Ignore | Get-Item -ErrorAction Ignore
-    if (!$BuildOutDir.Exists) { throw [DirectoryNotFoundException]::new($BuildOutDir) }
+    if (![IO.Directory]::Exists("$BuildOutDir")) { throw [DirectoryNotFoundException]::New($BuildOutDir) }
   }
   $manifestFile = [IO.FileInfo]::New([IO.Path]::Combine($BuildOutDir, "cryptobase.psd1"))
 }
@@ -67,14 +67,10 @@ process {
   Write-Host "  Cryptobase Module - Test Suite" -ForegroundColor Cyan
   Write-Host "==========================================" -ForegroundColor Cyan
   Write-Host "[0/3] Checking Prerequisites ..." -ForegroundColor Green
-  if (!$BuildOutDir.Exists) {
-    $msg = 'Directory "{0}" Not Found.' -f ([IO.Path]::GetRelativePath($PSScriptRoot, $BuildOutDir))
-    if ($SkipBuildOutput) {
-      Write-Host $msg -ForegroundColor Yellow
-    }
-    else {
-      throw [DirectoryNotFoundException]::New($msg)
-    }
+  if (![IO.Directory]::Exists("$BuildOutDir")) {
+    $msg = "Directory '$BuildOutDir' Not Found."
+    if ($SkipBuildOutput) { Write-Warning $msg }
+    else { throw [DirectoryNotFoundException]::New($msg) }
   }
   if (!$manifestFile.Exists) {
     throw [FileNotFoundException]::New("Could Not Find Module manifest File '$manifestFile'")
@@ -90,7 +86,7 @@ process {
   if (!$SkipBuildOutput) {
     Test-ModuleManifest -Path $manifestFile.FullName -ErrorAction Stop -Verbose:$false
   }
-  Write-Host "[2/2] Running all test files" -ForegroundColor Yellow
+  Write-Host "[2/2] Running all test files ..." -ForegroundColor Green
   $IsCorrectPesterVersion = (Get-Module Pester -ListAvailable | Select-Object -Expand Version) -le [version]"3.4.0"
   if (!$IsCorrectPesterVersion) {
     throw "Pester tests were writen on pester v3.4.0, please downgrade and try again"
