@@ -32,7 +32,7 @@ Standardized as FIPS 204 (formerly Dilithium). Used for digital signatures.
 
 #### Usage
 ```powershell
-$dsa = [MLDsa]::new()
+$dsa = [MLDsaCore]::new()
 
 # Generate a new keypair
 $keys = $dsa.GenerateKeyPair()
