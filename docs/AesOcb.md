@@ -15,14 +15,14 @@ $key = [byte[]]::new(32) # 256-bit key
 $nonce = [byte[]]::new(12) # OCB supports nonces up to 15 bytes, 12 is standard
 [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
 
-$plaintext = [System.Text.Encoding]::UTF8.GetBytes("Data for OCB")
+$plainbytes = [System.Text.Encoding]::UTF8.GetBytes("Data for OCB")
 $tag = [byte[]]::new(16) # Authentication tag
 
 $ocb = [AesOcb]::new($key)
 # Optional AAD
 $aad = [System.Text.Encoding]::UTF8.GetBytes("header")
 
-$ciphertext = $ocb.Encrypt($nonce, $plaintext, $tag, $aad)
+$ciphertext = $ocb.Encrypt($nonce, $plainbytes, $tag, $aad)
 ```
 
 ### Decrypting Data

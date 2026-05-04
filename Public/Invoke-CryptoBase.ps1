@@ -1,18 +1,19 @@
-﻿function Invoke-CryptoBase {
+﻿using namespace System.Management.Automation
+function Invoke-CryptoBase {
   #.DESCRIPTION
   #  Creates a custom CryptoBase object and Invokes methods on it.
   # .EXAMPLE
-  #  "https://github.com" | CryptoBase IsValidUrl
+  #  "This is my secret message" | CryptoBase SignMessage
   # .NOTES
   #  If you want more control you can directly use the [CryptoBase] class :)
   #.LINK
   #  https://github.com/chadnpc/cliHelper.CryptoBase/blob/main/Public/Invoke-CryptoBase.ps1
   [CmdletBinding()]
-  [Alias('CryptoBase')]
+  [Alias('cryptobase')]
   [OutputType({ [CryptoBase]::ReturnTypes })]
   param(
     [Parameter(Mandatory = $false, Position = 0)]
-    [Alias('m')][ValidateNotNullOrEmpty()]
+    [Alias('m')][AllowEmptyString()]
     [ArgumentCompleter({
         [OutputType([System.Management.Automation.CompletionResult])]
         param(
@@ -42,6 +43,7 @@
     $crypt = [CryptoBase]::new()
   }
   process {
+    $Method = [string]::IsNullOrWhiteSpace($Method) ? "GetHelp" : $Method
     $InvalidMethods = $Method.Where({ $_ -notin [CryptoBase]::Methods.Name })
     if ($InvalidMethods.Count -gt 0) {
       $PSCmdlet.ThrowTerminatingError([System.Management.Automation.ErrorRecord]::new(

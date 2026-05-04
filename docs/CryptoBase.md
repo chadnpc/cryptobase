@@ -10,15 +10,15 @@ The `[CryptoBase]` is the main class, it provides high-level convenience methods
 Encrypts plaintext with a password.
 
 ```powershell
-$plaintext = [System.Text.Encoding]::UTF8.GetBytes("Secret message")
+$plainbytes = [System.Text.Encoding]::UTF8.GetBytes("Secret message")
 $password = "your-password"
 
 # Basic protection
-$protected = [CryptoBase]::ProtectData($plaintext, $password)
+$protected = [CryptoBase]::ProtectData($plainbytes, $password)
 
 # Protection with Additional Authenticated Data (AAD)
 $aad = [System.Text.Encoding]::UTF8.GetBytes("header-info")
-$protected = [CryptoBase]::ProtectData($plaintext, $password, $aad)
+$protected = [CryptoBase]::ProtectData($plainbytes, $password, $aad)
 ```
 
 ### UnprotectData
@@ -35,10 +35,10 @@ $decrypted = [CryptoBase]::UnprotectData($protected, $password)
 Paranoid cascade mode: **AES-256-GCM (inner)** wrapped by **XChaCha20-Poly1305 (outer)**, with independent keys derived from a 64-byte Argon2id output.
 
 ```powershell
-$plaintext = [System.Text.Encoding]::UTF8.GetBytes("Classified")
+$plainbytes = [System.Text.Encoding]::UTF8.GetBytes("Classified")
 $password = "correct horse battery staple"
 
-$cascade = [CryptoBase]::ProtectDataCascade($plaintext, $password)
+$cascade = [CryptoBase]::ProtectDataCascade($plainbytes, $password)
 $opened = [CryptoBase]::UnprotectDataCascade($cascade, $password)
 ```
 

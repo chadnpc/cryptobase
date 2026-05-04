@@ -185,11 +185,13 @@ class X509 : CryptobaseUtils {
   static [byte[]] Decrypt([byte[]]$CipherBytes, [X509Certificate2]$Cert) {
     $decryptor = $Cert.GetRSAPrivateKey().CreateDecryptor()
     $plainBytes = $decryptor.TransformFinalBlock($CipherBytes, 0, $CipherBytes.Length)
+    [Array]::Clear($decryptor, 0, $decryptor.Length)
     return $plainBytes
   }
   static [byte[]] Decrypt([byte[]]$CipherBytes, [X509Certificate2]$Cert, [RSAEncryptionPadding]$KeyPadding) {
     $decryptor = $Cert.GetRSAPrivateKey().CreateDecryptor($KeyPadding)
     $plainBytes = $decryptor.TransformFinalBlock($CipherBytes, 0, $CipherBytes.Length)
+    [Array]::Clear($decryptor, 0, $decryptor.Length)
     return $plainBytes
   }
   static [bool]IsValidExtension([string] $extension) {

@@ -15,8 +15,8 @@ $key = [byte[]]::new(32) # 256-bit key
 $nonce = [byte[]]::new(12) # Standard GCM nonce size
 [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
 
-$plaintext = [System.Text.Encoding]::UTF8.GetBytes("Secret message")
-$ciphertext = [byte[]]::new($plaintext.Length)
+$plainbytes = [System.Text.Encoding]::UTF8.GetBytes("Secret message")
+$ciphertext = [byte[]]::new($plainbytes.Length)
 $tag = [byte[]]::new(16) # Authentication tag
 
 $aes = [AesGcm]::new($key)
@@ -24,7 +24,7 @@ try {
     # Optional Additional Authenticated Data (AAD)
     $aad = [System.Text.Encoding]::UTF8.GetBytes("context-data")
     
-    $aes.Encrypt($nonce, $plaintext, $ciphertext, $tag, $aad)
+    $aes.Encrypt($nonce, $plainbytes, $ciphertext, $tag, $aad)
 }
 finally {
     $aes.Dispose()

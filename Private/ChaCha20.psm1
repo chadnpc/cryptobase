@@ -145,11 +145,11 @@ class ChaCha20Poly1305Pure {
     for ($i = $loopLen; $i -lt 16; $i++) { $tag[$i] = 0 }
   }
 
-  [byte[]] Encrypt([byte[]]$plaintext) {
-    if ($null -eq $plaintext) { throw [System.ArgumentNullException]::new("plaintext") }
+  [byte[]] Encrypt([byte[]]$plainbytes) {
+    if ($null -eq $plainbytes) { throw [System.ArgumentNullException]::new("plaintext") }
     $nonce = [byte[]]::new(12)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
-    $ciphertextWithTag = [ChaCha20Poly1305Pure]::Encrypt($this.Key, $nonce, $plaintext, [byte[]]::new(0))
+    $ciphertextWithTag = [ChaCha20Poly1305Pure]::Encrypt($this.Key, $nonce, $plainbytes, [byte[]]::new(0))
     $result = [byte[]]::new(12 + $ciphertextWithTag.Length)
     [Array]::Copy($nonce, 0, $result, 0, 12)
     [Array]::Copy($ciphertextWithTag, 0, $result, 12, $ciphertextWithTag.Length)
@@ -166,10 +166,10 @@ class ChaCha20Poly1305Pure {
     return [ChaCha20Poly1305Pure]::Decrypt($this.Key, $nonce, $rest, [byte[]]::new(0))
   }
 
-  static [byte[]] Encrypt([byte[]]$Key, [byte[]]$Nonce, [byte[]]$Plaintext, [byte[]]$AssociatedData) {
+  static [byte[]] Encrypt([byte[]]$Key, [byte[]]$Nonce, [byte[]]$plainbytes, [byte[]]$AssociatedData) {
     if ($null -eq $Key -or $Key.Length -ne 32) { throw [System.ArgumentException]::new("Key must be 32 bytes") }
     if ($null -eq $Nonce -or $Nonce.Length -ne 12) { throw [System.ArgumentException]::new("Nonce must be 12 bytes") }
-    if ($null -eq $Plaintext) { throw [System.ArgumentNullException]::new("Plaintext") }
+    if ($null -eq $plainbytes) { throw [System.ArgumentNullException]::new("Plaintext") }
     if ($null -eq $AssociatedData) { $AssociatedData = [byte[]]::new(0) }
 
     $block0 = [byte[]]::new(64)
@@ -178,7 +178,7 @@ class ChaCha20Poly1305Pure {
     $poly1305Key = [byte[]]::new(32)
     [Array]::Copy($block0, 0, $poly1305Key, 0, 32)
 
-    $ciphertextCount = $Plaintext.Length
+    $ciphertextCount = $plainbytes.Length
     $ciphertext = [byte[]]::new($ciphertextCount)
     $keystream = [byte[]]::new(64)
     $blocks = [Math]::Ceiling($ciphertextCount / 64.0)
@@ -191,7 +191,7 @@ class ChaCha20Poly1305Pure {
       $offset = $i * 64
       $len = [Math]::Min(64, $ciphertextCount - $offset)
       for ($j = 0; $j -lt $len; $j++) {
-        $ciphertext[$offset + $j] = [byte]($Plaintext[$offset + $j] -bxor $keystream[$j])
+        $ciphertext[$offset + $j] = [byte]($plainbytes[$offset + $j] -bxor $keystream[$j])
       }
     }
 
@@ -272,7 +272,7 @@ class ChaCha20Poly1305Pure {
       }
     }
 
-    $plaintext = [byte[]]::new($actualCiphertextLen)
+    $plainbytes = [byte[]]::new($actualCiphertextLen)
     $keystream = [byte[]]::new(64)
     $blocks = [Math]::Ceiling($actualCiphertextLen / 64.0)
 
@@ -283,10 +283,10 @@ class ChaCha20Poly1305Pure {
       $offset = $i * 64
       $len = [Math]::Min(64, $actualCiphertextLen - $offset)
       for ($j = 0; $j -lt $len; $j++) {
-        $plaintext[$offset + $j] = [byte]($actualCiphertext[$offset + $j] -bxor $keystream[$j])
+        $plainbytes[$offset + $j] = [byte]($actualCiphertext[$offset + $j] -bxor $keystream[$j])
       }
     }
 
-    return $plaintext
+    return $plainbytes
   }
 }

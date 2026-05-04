@@ -16,7 +16,7 @@ Legacy encryption standard. Significantly slower and less secure than AES.
 
 ```powershell
 $tdes = [TripleDES]::new($key)
-$ciphertext = $tdes.Encrypt($plaintext)
+$ciphertext = $tdes.Encrypt($plainbytes)
 ```
 
 ---

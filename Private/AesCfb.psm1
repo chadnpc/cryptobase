@@ -7,8 +7,8 @@ using module ./Utilities.psm1
 class AesCfb : CryptobaseUtils {
   static [int] $BlockSize = 16
 
-  static [byte[]] Encrypt([byte[]]$plaintext, [byte[]]$key, [byte[]]$iv) {
-  if ($null -eq $plaintext) { throw [ArgumentNullException]::new("plaintext") }
+  static [byte[]] Encrypt([byte[]]$plainbytes, [byte[]]$key, [byte[]]$iv) {
+  if ($null -eq $plainbytes) { throw [ArgumentNullException]::new("plaintext") }
   if ($null -eq $key) { throw [ArgumentNullException]::new("key") }
   if ($null -eq $iv) { throw [ArgumentNullException]::new("iv") }
     if ($iv.Length -ne [AesCfb]::BlockSize) { throw [ArgumentException]::new("IV must be 16 bytes.") }
@@ -18,7 +18,7 @@ class AesCfb : CryptobaseUtils {
     $aes.Mode = [CipherMode]::ECB
     $aes.Padding = [PaddingMode]::None
 
-    $result = [AesCfb]::ProcessCore($plaintext, $aes, $iv, $true)
+    $result = [AesCfb]::ProcessCore($plainbytes, $aes, $iv, $true)
     $aes.Dispose()
     return $result
   }

@@ -139,9 +139,13 @@ class PemParser {
 
     # Identify type from header
     $type = 'UNKNOWN'
-    if ($Content -match 'BEGIN\s+(\w+)\s+KEY')          { $type = $matches[1] }
-    elseif ($Content -match 'BEGIN\s+CERTIFICATE')       { $type = 'CERTIFICATE' }
-    elseif ($Content -match 'BEGIN\s+(\w+)\s+PRIVATE\s+KEY') { $type = $matches[1] + ' PRIVATE KEY' }
+    if ($Content -match 'BEGIN\s+(\w+)\s+KEY') {
+      $type = $matches[1]
+    } elseif ($Content -match 'BEGIN\s+CERTIFICATE') {
+      $type = 'CERTIFICATE'
+    } elseif ($Content -match 'BEGIN\s+(\w+)\s+PRIVATE\s+KEY') {
+      $type = $matches[1] + ' PRIVATE KEY'
+    }
 
     return @{ Type = $type; Data = $decoded; Raw = $Content }
   }
@@ -187,12 +191,12 @@ class SecureBox {
     $this.key = $key
   }
 
-  [byte[]] Encrypt([byte[]]$plaintext) {
+  [byte[]] Encrypt([byte[]]$plainbytes) {
     $aes = [System.Security.Cryptography.Aes]::Create()
     $aes.Key = $this.key
     $aes.GenerateIV()
     $encryptor = $aes.CreateEncryptor()
-    $ct = $encryptor.TransformFinalBlock($plaintext, 0, $plaintext.Length)
+    $ct = $encryptor.TransformFinalBlock($plainbytes, 0, $plainbytes.Length)
     return $aes.IV + $ct
   }
 
@@ -677,9 +681,6 @@ class CryptobaseUtils : PsModuleBase {
   static [string] $caller
   static [byte[]] $counter
   static [EncryptionScope] $Scope = 'User'
-  static [Type[]] $ReturnTypes = ([CryptobaseUtils]::Methods.ReturnType | Sort-Object -Unique Name)
-  static [MethodInfo[]] $Methods = ([CryptobaseUtils].GetMethods().Where({ $_.IsStatic -and !$_.IsHideBySig }))
-
   static hidden [ValidateNotNull()][byte[]] $_salt = [Convert]::FromBase64String( 'bz07LmY5XiNkXW1WQjxdXw==')
   static hidden [ValidateNotNull()][byte[]] $_bytes
   static hidden [ValidateNotNull()][securestring] $_Password

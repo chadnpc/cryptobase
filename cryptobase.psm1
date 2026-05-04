@@ -68,37 +68,40 @@ using module Private/XSalsa20.psm1
 
 # Main class
 class CryptoBase : CryptobaseUtils {
+  static [Type[]] $ReturnTypes = ([CryptoBase]::Methods.ReturnType | Sort-Object -Unique Name)
+  static [MethodInfo[]] $Methods = ([Cryptobase].GetMethods().Where({ $_.IsStatic -and !$_.IsHideBySig }))
+
   CryptoBase() {}
 
-  static [byte[]] ProtectData([byte[]]$plaintext, [SecureString]$password) {
-    return [CryptoBase]::ProtectData($plaintext, $password, $null)
+  static [string] GetHelp() {
+    return "this is help info"
   }
 
-  static [byte[]] ProtectData([byte[]]$plaintext, [string]$password) {
-    return [CryptoBase]::ProtectData($plaintext, $password, $null)
+  static [byte[]] ProtectData([byte[]]$plainbytes, [string]$passw0rd) {
+    return [CryptoBase]::ProtectData($plainbytes, $passw0rd, $null)
   }
 
-  static [byte[]] ProtectData([byte[]]$plaintext, [string]$password, [byte[]]$aad) {
-    # Just use a SecureString
-    $ss = [System.Security.SecureString]::new()
-    $password.ToCharArray().ForEach({ $ss.AppendChar($_) })
-    return [CryptoBase]::ProtectData($plaintext, $ss, $aad)
+  static [byte[]] ProtectData([byte[]]$plainbytes, [SecureString]$password) {
+    return [CryptoBase]::ProtectData($plainbytes, $password, $null)
   }
 
-  static [byte[]] ProtectData([byte[]]$plaintext, [securestring]$password, [byte[]]$aad) {
+  static [byte[]] ProtectData([byte[]]$plainbytes, [string]$passw0rd, [byte[]]$aad) {
+    return [CryptoBase]::ProtectData($plainbytes, [xconvert]::ToSecurestring($passw0rd), $aad)
+  }
+
+  static [byte[]] ProtectData([byte[]]$plainbytes, [securestring]$password, [byte[]]$aad) {
     $salt = [byte[]]::new(16)
     $nonce = [byte[]]::new(12)
     [RandomNumberGenerator]::Fill($salt)
     [RandomNumberGenerator]::Fill($nonce)
     $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
     $key = [Argon2id]::Hash($passBytes, $salt, 65536, 3, 4, 32)
-    $ciphertext = [byte[]]::new($plaintext.Length)
+    $ciphertext = [byte[]]::new($plainbytes.Length)
     $tag = [byte[]]::new(16)
     $aes = [System.Security.Cryptography.AesGcm]::new($key)
     try {
-      $aes.Encrypt($nonce, $plaintext, $ciphertext, $tag, $aad)
-    }
-    finally {
+      $aes.Encrypt($nonce, $plainbytes, $ciphertext, $tag, $aad)
+    } finally {
       $aes.Dispose()
       [Array]::Clear($passBytes, 0, $passBytes.Length)
       [Array]::Clear($key, 0, $key.Length)
@@ -107,7 +110,7 @@ class CryptoBase : CryptobaseUtils {
     return [byte[]]@(0x01) + $salt + $nonce + $tag + $ciphertext
   }
 
-  static [byte[]] ProtectDataCascade([byte[]]$plaintext, [securestring]$password) {
+  static [byte[]] ProtectDataCascade([byte[]]$plainbytes, [securestring]$password) {
     $salt = [byte[]]::new(32)
     [RandomNumberGenerator]::Fill($salt)
 
@@ -121,14 +124,13 @@ class CryptoBase : CryptobaseUtils {
 
     $aesNonce = [byte[]]::new(12)
     [RandomNumberGenerator]::Fill($aesNonce)
-    $innerCiphertext = [byte[]]::new($plaintext.Length)
+    $innerCiphertext = [byte[]]::new($plainbytes.Length)
     $aesTag = [byte[]]::new(16)
 
     $aes = [System.Security.Cryptography.AesGcm]::new($aesKey)
     try {
-      $aes.Encrypt($aesNonce, $plaintext, $innerCiphertext, $aesTag)
-    }
-    finally {
+      $aes.Encrypt($aesNonce, $plainbytes, $innerCiphertext, $aesTag)
+    } finally {
       $aes.Dispose()
       [Array]::Clear($aesKey, 0, $aesKey.Length)
     }
@@ -165,20 +167,19 @@ class CryptoBase : CryptobaseUtils {
     $aesNonce = [byte[]]$innerPayload[0..11]
     $aesTag = [byte[]]$innerPayload[12..27]
     $innerCiphertext = [byte[]]$innerPayload[28..($innerPayload.Length - 1)]
-    $plaintext = [byte[]]::new($innerCiphertext.Length)
+    $plainbytes = [byte[]]::new($innerCiphertext.Length)
 
     $aes = [System.Security.Cryptography.AesGcm]::new($aesKey)
     try {
-      $aes.Decrypt($aesNonce, $innerCiphertext, $aesTag, $plaintext)
-      return $plaintext
-    }
-    finally {
+      $aes.Decrypt($aesNonce, $innerCiphertext, $aesTag, $plainbytes)
+      return $plainbytes
+    } finally {
       $aes.Dispose()
       [Array]::Clear($aesKey, 0, $aesKey.Length)
     }
   }
 
-  static [byte[]] CreateSealedBox([byte[]]$plaintext, [byte[]]$senderPrivateKey, [byte[]]$recipientPublicKey) {
+  static [byte[]] CreateSealedBox([byte[]]$plainbytes, [byte[]]$senderPrivateKey, [byte[]]$recipientPublicKey) {
     # NOTE: [Curve25519] currently wraps ECDH over NIST P-256 key material in this module.
     $sharedSecret = [Curve25519]::DeriveSharedSecret($senderPrivateKey, $recipientPublicKey)
     $info = [Encoding]::UTF8.GetBytes("CryptoBase_SealedBox_P256_v1")
@@ -187,13 +188,13 @@ class CryptoBase : CryptobaseUtils {
 
     $nonce = [byte[]]::new(24)
     [RandomNumberGenerator]::Fill($nonce)
-    $ciphertextWithTag = [XChaCha20Poly1305]::Encrypt($plaintext, $symmetricKey, $nonce)
+    $ciphertextWithTag = [XChaCha20Poly1305]::Encrypt($plainbytes, $symmetricKey, $nonce)
     [Array]::Clear($symmetricKey, 0, $symmetricKey.Length)
 
     return [byte[]]$nonce + $ciphertextWithTag
   }
 
-  static [hashtable] ProtectDataQuantumHybrid([byte[]]$plaintext, [byte[]]$recipientP256Pub, [byte[]]$recipientKemPub) {
+  static [hashtable] ProtectDataQuantumHybrid([byte[]]$plainbytes, [byte[]]$recipientP256Pub, [byte[]]$recipientKemPub) {
     # NOTE: [Curve25519] currently wraps ECDH over NIST P-256 key material in this module.
     $ephemeralCurve = [Curve25519]::GenerateKeyPair()
     $classicShared = [Curve25519]::DeriveSharedSecret($ephemeralCurve.PrivateKey, $recipientP256Pub)
@@ -208,13 +209,13 @@ class CryptoBase : CryptobaseUtils {
 
     $nonce = [byte[]]::new(24)
     [RandomNumberGenerator]::Fill($nonce)
-    $ciphertext = [XChaCha20Poly1305]::Encrypt($plaintext, $hybridSecret, $nonce)
+    $ciphertext = [XChaCha20Poly1305]::Encrypt($plainbytes, $hybridSecret, $nonce)
     [Array]::Clear($hybridSecret, 0, $hybridSecret.Length)
 
     return @{
-      Ciphertext = [byte[]]$nonce + $ciphertext
+      Ciphertext        = [byte[]]$nonce + $ciphertext
       EphemeralCurvePub = $ephemeralCurve.PublicKey
-      KemCiphertext = $kemResult.Ciphertext
+      KemCiphertext     = $kemResult.Ciphertext
     }
   }
 
@@ -227,6 +228,9 @@ class CryptoBase : CryptobaseUtils {
   }
 
   static [byte[]] UnprotectData([byte[]]$protectedBytes, [string]$passw0rd, [byte[]]$aad) {
+    if ([string]::IsNullOrWhiteSpace($passw0rd)) {
+      throw [ArgumentException]::new("Password cannot be null or empty.")
+    }
     return [CryptoBase]::UnprotectData($protectedBytes, [xconvert]::ToSecurestring($passw0rd), $aad)
   }
 
@@ -240,25 +244,29 @@ class CryptoBase : CryptobaseUtils {
     $ciphertext = [byte[]]::new($cipherLen); [Array]::Copy($protectedBytes, 45, $ciphertext, 0, $cipherLen)
     $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
     $key = [Argon2id]::Hash($passBytes, $salt, 65536, 3, 4, 32)
-    $plaintext = [byte[]]::new($cipherLen)
+    $plainbytes = [byte[]]::new($cipherLen)
     $aes = [System.Security.Cryptography.AesGcm]::new($key)
     try {
-      $aes.Decrypt($nonce, $ciphertext, $tag, $plaintext, $aad)
-      return $plaintext
-    }
-    finally {
+      $aes.Decrypt($nonce, $ciphertext, $tag, $plainbytes, $aad)
+      return $plainbytes
+    } finally {
       $aes.Dispose()
       [Array]::Clear($passBytes, 0, $passBytes.Length)
       [Array]::Clear($key, 0, $key.Length)
     }
   }
 
-  static [hashtable] SignMessage([byte[]]$data) {
+  static [Secp256k1SignResult] SignMessage([string]$string) {
+    return [CryptoBase]::SignMessage([Encoding]::UTF8.GetBytes($string))
+  }
+  static [Secp256k1SignResult] SignMessage([byte[]]$data) {
     $kp = [Secp256k1]::GenerateKeyPair()
     $sig = [Secp256k1]::Sign($data, $kp.PrivateKey)
-    return @{ Signature = $sig; PublicKey = $kp.PublicKey; PrivateKey = $kp.PrivateKey }
+    return [Secp256k1SignResult]::new($sig, $kp.PrivateKey, $kp.PublicKey)
   }
-
+  static [bool] VerifyMessage([string]$string, [byte[]]$signature, [byte[]]$publicKey) {
+    return [CryptoBase]::VerifyMessage([Encoding]::UTF8.GetBytes($string), $signature, $publicKey)
+  }
   static [bool] VerifyMessage([byte[]]$data, [byte[]]$signature, [byte[]]$publicKey) {
     return [Secp256k1]::Verify($data, $signature, $publicKey)
   }
@@ -290,8 +298,7 @@ class CryptoBase : CryptobaseUtils {
     $mdp = [Marshal]::SecureStringToBSTR($ss)
     try {
       $result = [Marshal]::PtrToStringBSTR($mdp)
-    }
-    finally {
+    } finally {
       [Marshal]::ZeroFreeBSTR($mdp)
       $ss.Dispose()
     }
@@ -317,8 +324,7 @@ $TypeAcceleratorsClass = [PsObject].Assembly.GetType('System.Management.Automati
 foreach ($Type in $typestoExport) {
   try {
     $TypeAcceleratorsClass::Add($Type.FullName, $Type)
-  }
-  catch {
+  } catch {
     # Ignore if already exists
     $null
   }
@@ -339,8 +345,7 @@ foreach ($file in $scripts) {
   try {
     if ([string]::IsNullOrWhiteSpace($file.fullname)) { continue }
     . "$($file.fullname)"
-  }
-  catch {
+  } catch {
     Write-Warning "Failed to import function $($file.BaseName): $_"
     $host.UI.WriteErrorLine($_)
   }

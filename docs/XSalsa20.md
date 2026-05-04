@@ -21,7 +21,7 @@ $data = [System.Text.Encoding]::UTF8.GetBytes("Streaming data...")
 $ciphertext = [XSalsa20]::Encrypt($data, $key, $nonce)
 
 # Decrypt (same method)
-$plaintext = [XSalsa20]::Decrypt($ciphertext, $key, $nonce)
+$plainbytes = [XSalsa20]::Decrypt($ciphertext, $key, $nonce)
 ```
 
 ### Encryption with Counter Offset

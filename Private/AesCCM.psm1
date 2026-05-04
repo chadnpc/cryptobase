@@ -38,13 +38,13 @@ class AesCCM {
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($this._macKey)
   }
 
-  [byte[]] Encrypt([byte[]]$plaintext) {
+  [byte[]] Encrypt([byte[]]$plainbytes) {
     # AES-CBC encrypt then HMAC-SHA256 authenticate (Encrypt-then-MAC)
     $aes = [System.Security.Cryptography.Aes]::Create()
     $aes.Key = $this._key
     $aes.GenerateIV()
     $encryptor = $aes.CreateEncryptor()
-    $ct = $encryptor.TransformFinalBlock($plaintext, 0, $plaintext.Length)
+    $ct = $encryptor.TransformFinalBlock($plainbytes, 0, $plainbytes.Length)
     $payload = $aes.IV + $ct
     $hmac = [System.Security.Cryptography.HMACSHA256]::new($this._macKey)
     $tag  = $hmac.ComputeHash($payload)
@@ -70,18 +70,18 @@ class AesCCM {
     return $decryptor.TransformFinalBlock($payload, 16, $payload.Length - 16)
   }
 
-  static [byte[]] Encrypt([byte[]]$Key, [byte[]]$Nonce, [byte[]]$Plaintext, [int]$TagLength = 8, [byte[]]$AssociatedData = $null) {
+  static [byte[]] Encrypt([byte[]]$Key, [byte[]]$Nonce, [byte[]]$plainbytes, [int]$TagLength = 8, [byte[]]$AssociatedData = $null) {
     if ($null -eq $Key) { throw [System.ArgumentNullException]::new("Key") }
     if ($null -eq $Nonce) { throw [System.ArgumentNullException]::new("Nonce") }
-    if ($null -eq $Plaintext) { throw [System.ArgumentNullException]::new("Plaintext") }
+    if ($null -eq $plainbytes) { throw [System.ArgumentNullException]::new("Plaintext") }
 
     $ccmType = [System.type]::GetType("System.Security.Cryptography.AesCcm, System.Security.Cryptography")
     if ($null -ne $ccmType) {
       $ccm = $ccmType::new($Key)
       try {
-        $ciphertext = [byte[]]::new($Plaintext.Length)
+        $ciphertext = [byte[]]::new($plainbytes.Length)
         $tag = [byte[]]::new($TagLength)
-        $ccm.Encrypt($Nonce, $Plaintext, $ciphertext, $tag, $AssociatedData)
+        $ccm.Encrypt($Nonce, $plainbytes, $ciphertext, $tag, $AssociatedData)
 
         $result = [byte[]]::new($ciphertext.Length + $TagLength)
         [Array]::Copy($ciphertext, 0, $result, 0, $ciphertext.Length)
@@ -104,11 +104,11 @@ class AesCCM {
     if ($null -ne $ccmType) {
       $ccm = $ccmType::new($Key)
       try {
-        $plaintext = [byte[]]::new($Ciphertext.Length - $TagLength)
+        $plainbytes = [byte[]]::new($Ciphertext.Length - $TagLength)
         $tag = [byte[]]::new($TagLength)
         [Array]::Copy($Ciphertext, $Ciphertext.Length - $TagLength, $tag, 0, $TagLength)
-        $ccm.Decrypt($Nonce, $Ciphertext[0..($Ciphertext.Length - $TagLength - 1)], $plaintext, $tag, $AssociatedData)
-        return $plaintext
+        $ccm.Decrypt($Nonce, $Ciphertext[0..($Ciphertext.Length - $TagLength - 1)], $plainbytes, $tag, $AssociatedData)
+        return $plainbytes
       } catch {
         throw [System.Security.Cryptography.CryptographicException]::new("Decryption failed")
       } finally {

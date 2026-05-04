@@ -23,7 +23,7 @@ using module ./Exceptions.psm1
 #   $key = [byte[]]::new(32)
 #   [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($key)
 #   $ciphertext = [AesSIV]::Encrypt($key, [System.Text.Encoding]::UTF8.GetBytes("Hello"))
-#   $plaintext = [AesSIV]::Decrypt($key, $ciphertext)
+#   $plainbytes = [AesSIV]::Decrypt($key, $ciphertext)
 # .NOTES
 #   Based on RFC 5297.
 class AesSIV {
@@ -115,14 +115,14 @@ class AesSIV {
     [Array]::Copy($Data, 12, $tag, 0, 16)
     [Array]::Copy($Data, 28, $ciphertext, 0, $ciphertext.Length)
 
-    $plaintext = [byte[]]::new($ciphertext.Length)
+    $plainbytes = [byte[]]::new($ciphertext.Length)
     $aesGcm = [System.Security.Cryptography.AesGcm]::new($Key, 16)
     $authOk = $false
     try {
       if ($null -ne $Aad -and $Aad.Length -gt 0) {
-        $aesGcm.Decrypt($nonce, $ciphertext, $tag, $plaintext, $Aad)
+        $aesGcm.Decrypt($nonce, $ciphertext, $tag, $plainbytes, $Aad)
       } else {
-        $aesGcm.Decrypt($nonce, $ciphertext, $tag, $plaintext)
+        $aesGcm.Decrypt($nonce, $ciphertext, $tag, $plainbytes)
       }
       $authOk = $true
     } catch {
@@ -131,7 +131,7 @@ class AesSIV {
       $aesGcm.Dispose()
     }
     if (-not $authOk) { return $null }
-    return $plaintext
+    return $plainbytes
   }
 
   static [int] NonceSize() { return 12 }

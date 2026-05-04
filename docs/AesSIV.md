@@ -12,11 +12,11 @@ The `[AesSIV]` class provides support for the SIV mode.
 $key = [byte[]]::new(32) # SIV uses 256-bit keys for AES-128 or 512-bit for AES-256
 [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
 
-$plaintext = [System.Text.Encoding]::UTF8.GetBytes("SIV is safe")
+$plainbytes = [System.Text.Encoding]::UTF8.GetBytes("SIV is safe")
 $aad = [System.Text.Encoding]::UTF8.GetBytes("authenticated-context")
 
 # Encrypt (returns SIV tag + ciphertext)
-$result = [AesSIV]::Encrypt($key, $plaintext, $aad)
+$result = [AesSIV]::Encrypt($key, $plainbytes, $aad)
 ```
 
 ### Decrypting Data

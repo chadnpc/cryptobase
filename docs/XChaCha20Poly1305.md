@@ -15,10 +15,10 @@ $key = [byte[]]::new(32) # 256-bit key
 $nonce = [byte[]]::new(24) # 192-bit nonce
 [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
 
-$plaintext = [System.Text.Encoding]::UTF8.GetBytes("Hello from XChaCha20!")
+$plainbytes = [System.Text.Encoding]::UTF8.GetBytes("Hello from XChaCha20!")
 
 # Encrypt (returns ciphertext + 16-byte tag)
-$ciphertextWithTag = [XChaCha20Poly1305]::Encrypt($plaintext, $key, $nonce)
+$ciphertextWithTag = [XChaCha20Poly1305]::Encrypt($plainbytes, $key, $nonce)
 ```
 
 ### Decrypting Data
@@ -39,10 +39,10 @@ If you only need to ensure data integrity without encryption, you can use `Authe
 
 ```powershell
 # Generate a 16-byte authentication tag
-$tag = [XChaCha20Poly1305]::Authenticate($plaintext, $key, $nonce)
+$tag = [XChaCha20Poly1305]::Authenticate($plainbytes, $key, $nonce)
 
 # Verify the tag
-$isValid = [XChaCha20Poly1305]::Verify($plaintext, $tag, $key, $nonce)
+$isValid = [XChaCha20Poly1305]::Verify($plainbytes, $tag, $key, $nonce)
 ```
 
 ## Why XChaCha20?

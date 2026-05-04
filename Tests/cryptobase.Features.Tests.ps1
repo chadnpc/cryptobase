@@ -608,10 +608,10 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
     It "SecureBox should encrypt and decrypt" {
       $key = [byte[]]@(1..32)
       $secureBox = [SecureBox]::new($key)
-      $plaintext = $testData
-      $ciphertext = $secureBox.Encrypt($plaintext)
+      $plainbytes = $testData
+      $ciphertext = $secureBox.Encrypt($plainbytes)
       $decrypted = $secureBox.Decrypt($ciphertext)
-      $decrypted | Should Be $plaintext
+      $decrypted | Should Be $plainbytes
     }
 
     It "SecureArray should protect memory" {

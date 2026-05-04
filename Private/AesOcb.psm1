@@ -160,20 +160,20 @@ class AesOcbCore : CryptobaseUtils {
     return $diff -eq 0
   }
 
-  static [hashtable] Encrypt([byte[]]$Plaintext, [byte[]]$Key) {
-    return [AesOcbCore]::Encrypt($Plaintext, $Key, $null, $null, $false)
+  static [hashtable] Encrypt([byte[]]$plainbytes, [byte[]]$Key) {
+    return [AesOcbCore]::Encrypt($plainbytes, $Key, $null, $null, $false)
   }
 
-  static [hashtable] Encrypt([byte[]]$Plaintext, [byte[]]$Key, [byte[]]$Nonce) {
-    return [AesOcbCore]::Encrypt($Plaintext, $Key, $Nonce, $null, $false)
+  static [hashtable] Encrypt([byte[]]$plainbytes, [byte[]]$Key, [byte[]]$Nonce) {
+    return [AesOcbCore]::Encrypt($plainbytes, $Key, $Nonce, $null, $false)
   }
 
-  static [hashtable] Encrypt([byte[]]$Plaintext, [byte[]]$Key, [byte[]]$Nonce, [byte[]]$AssociatedData) {
-    return [AesOcbCore]::Encrypt($Plaintext, $Key, $Nonce, $AssociatedData, $false)
+  static [hashtable] Encrypt([byte[]]$plainbytes, [byte[]]$Key, [byte[]]$Nonce, [byte[]]$AssociatedData) {
+    return [AesOcbCore]::Encrypt($plainbytes, $Key, $Nonce, $AssociatedData, $false)
   }
 
-  static [hashtable] Encrypt([byte[]]$Plaintext, [byte[]]$Key, [byte[]]$Nonce, [byte[]]$AssociatedData, [bool]$DeterministicMode) {
-    if ($null -eq $Plaintext) { throw [ArgumentNullException]::new('Plaintext') }
+  static [hashtable] Encrypt([byte[]]$plainbytes, [byte[]]$Key, [byte[]]$Nonce, [byte[]]$AssociatedData, [bool]$DeterministicMode) {
+    if ($null -eq $plainbytes) { throw [ArgumentNullException]::new('Plaintext') }
     if ($null -eq $Nonce -or $Nonce.Length -eq 0) {
       $Nonce = [byte[]]::new([AesOcbCore]::DefaultNonceSize)
       if (-not $DeterministicMode) {
@@ -203,15 +203,15 @@ class AesOcbCore : CryptobaseUtils {
     [AesOcbCore]::InitializeOffset($encryptor, $offset, $Nonce, $lDollar, $inBuf, $outBuf)
 
     $checksum = [byte[]]::new(16)
-    $fullBlocks = [Math]::Floor($Plaintext.Length / 16)
-    $ciphertext = [byte[]]::new($Plaintext.Length + [AesOcbCore]::TagSize)
+    $fullBlocks = [Math]::Floor($plainbytes.Length / 16)
+    $ciphertext = [byte[]]::new($plainbytes.Length + [AesOcbCore]::TagSize)
 
     $li = [byte[]]::new(16)
     $tempBlock = [byte[]]::new(16)
     $outBlock = [byte[]]::new(16)
 
     for ($i = 0; $i -lt $fullBlocks; $i++) {
-      [Array]::Copy($Plaintext, $i * 16, $tempBlock, 0, 16)
+      [Array]::Copy($plainbytes, $i * 16, $tempBlock, 0, 16)
       [AesOcbCore]::GetL($li, $lStar, $i + 1)
       [AesOcbCore]::XorBlock($offset, $offset, $li)
       [AesOcbCore]::XorBlock($checksum, $checksum, $tempBlock)
@@ -221,22 +221,22 @@ class AesOcbCore : CryptobaseUtils {
       [Array]::Copy($outBlock, 0, $ciphertext, $i * 16, 16)
     }
 
-    $remaining = $Plaintext.Length % 16
+    $remaining = $plainbytes.Length % 16
     if ($remaining -gt 0) {
       [AesOcbCore]::XorBlock($offset, $offset, $lStar)
       $pad = [byte[]]::new(16)
       [AesOcbCore]::EncryptBlock($encryptor, $pad, $offset, $inBuf, $outBuf)
 
       for ($i = 0; $i -lt $remaining; $i++) {
-        $ciphertext[$fullBlocks * 16 + $i] = [byte]($Plaintext[$fullBlocks * 16 + $i] -bxor $pad[$i])
-        $checksum[$i] = [byte]($checksum[$i] -bxor $Plaintext[$fullBlocks * 16 + $i])
+        $ciphertext[$fullBlocks * 16 + $i] = [byte]($plainbytes[$fullBlocks * 16 + $i] -bxor $pad[$i])
+        $checksum[$i] = [byte]($checksum[$i] -bxor $plainbytes[$fullBlocks * 16 + $i])
       }
       $checksum[$remaining] = [byte]($checksum[$remaining] -bxor 0x80)
     }
 
     $tag = [byte[]]::new(16)
     [AesOcbCore]::ComputeTag($encryptor, $tag, $offset, $checksum, $lDollar, $AssociatedData, $inBuf, $outBuf)
-    [Array]::Copy($tag, 0, $ciphertext, $Plaintext.Length, 16)
+    [Array]::Copy($tag, 0, $ciphertext, $plainbytes.Length, 16)
 
     $encryptor.Dispose()
     $aes.Dispose()
@@ -279,7 +279,7 @@ class AesOcbCore : CryptobaseUtils {
 
     $checksum = [byte[]]::new(16)
     $fullBlocks = [Math]::Floor($ptLen / 16)
-    $plaintext = [byte[]]::new($ptLen)
+    $plainbytes = [byte[]]::new($ptLen)
 
     $li = [byte[]]::new(16)
     $tempBlock = [byte[]]::new(16)
@@ -292,7 +292,7 @@ class AesOcbCore : CryptobaseUtils {
       [AesOcbCore]::XorBlock($tempBlock, $tempBlock, $offset)
       [AesOcbCore]::DecryptBlock($decryptor, $outBlock, $tempBlock, $inBuf, $outBuf)
       [AesOcbCore]::XorBlock($outBlock, $outBlock, $offset)
-      [Array]::Copy($outBlock, 0, $plaintext, $i * 16, 16)
+      [Array]::Copy($outBlock, 0, $plainbytes, $i * 16, 16)
       [AesOcbCore]::XorBlock($checksum, $checksum, $outBlock)
     }
 
@@ -303,8 +303,8 @@ class AesOcbCore : CryptobaseUtils {
       [AesOcbCore]::EncryptBlock($encryptor, $pad, $offset, $inBuf, $outBuf)
 
       for ($i = 0; $i -lt $remaining; $i++) {
-        $plaintext[$fullBlocks * 16 + $i] = [byte]($Ciphertext[$fullBlocks * 16 + $i] -bxor $pad[$i])
-        $checksum[$i] = [byte]($checksum[$i] -bxor $plaintext[$fullBlocks * 16 + $i])
+        $plainbytes[$fullBlocks * 16 + $i] = [byte]($Ciphertext[$fullBlocks * 16 + $i] -bxor $pad[$i])
+        $checksum[$i] = [byte]($checksum[$i] -bxor $plainbytes[$fullBlocks * 16 + $i])
       }
       $checksum[$remaining] = [byte]($checksum[$remaining] -bxor 0x80)
     }
@@ -316,7 +316,7 @@ class AesOcbCore : CryptobaseUtils {
     [Array]::Copy($Ciphertext, $ptLen, $actualTag, 0, 16)
 
     if (-not [AesOcbCore]::ConstantTimeEquals($expectedTag, $actualTag)) {
-      [Array]::Clear($plaintext, 0, $plaintext.Length)
+      [Array]::Clear($plainbytes, 0, $plainbytes.Length)
       throw [System.Security.Cryptography.CryptographicException]::new('AES-OCB decryption failed: authentication tag mismatch.')
     }
 
@@ -324,7 +324,7 @@ class AesOcbCore : CryptobaseUtils {
     $decryptor.Dispose()
     $aes.Dispose()
 
-    return $plaintext
+    return $plainbytes
   }
 }
 
@@ -359,10 +359,10 @@ class AesOcb : AesOcbCore {
     return $this
   }
 
-  [byte[]] Encrypt([byte[]]$Plaintext) {
+  [byte[]] Encrypt([byte[]]$plainbytes) {
     if ($null -eq $this._key) { throw [InvalidOperationException]::new('Key has not been set. Use WithKey() first.') }
     if ($null -eq $this._nonce) { throw [InvalidOperationException]::new('Nonce has not been set. Use WithNonce() or WithRandomNonce() first.') }
-    return [AesOcbCore]::Encrypt($Plaintext, $this._key, $this._nonce, $this._associatedData).Ciphertext
+    return [AesOcbCore]::Encrypt($plainbytes, $this._key, $this._nonce, $this._associatedData).Ciphertext
   }
 
   [byte[]] Decrypt([byte[]]$Ciphertext) {
