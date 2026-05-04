@@ -2,6 +2,27 @@
 
 The `[CryptoBase]` is the main class, it provides high-level convenience methods for common cryptographic tasks.
 
+## **CLI and Pipeline Usage**
+
+The `Invoke-CryptoBase` cmdlet (alias: `cryptobase`) provides a CLI-like experience and supports pipeline input. By utilizing single-parameter method overloads, you can pipe data directly into cryptographic operations. If a method requires a password but you don't provide one, you will be prompted securely via `Read-Host -AsSecureString`.
+
+```powershell
+# View manual-style help
+cryptobase GetHelp
+
+# Sign a message via pipeline
+"This is my secret message" | cryptobase SignMessage
+
+# Encrypt data (will prompt for password interactively)
+"Sensitive Data" | cryptobase ProtectData > secret.bin
+
+# Decrypt data (will prompt for password interactively)
+Get-Content secret.bin -AsByteStream | cryptobase UnprotectData
+
+# Obfuscate a file (prompts for password and creates file.txt.enc)
+"file.txt" | cryptobase ObfuscateFile
+```
+
 ## **Data Protection**
 
 `ProtectData` / `UnprotectData` use **Argon2id** (64 MiB memory, 3 iterations, parallelism 4) to derive a 256-bit key from a password, and then use **AES-256-GCM** for authenticated encryption.
