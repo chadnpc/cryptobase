@@ -15,6 +15,7 @@ function Test-PasswordHash {
   .EXAMPLE
   PS C:\> Test-PasswordHash -Password "SuperSecret123!" -Hash "`$argon2id`$v=19`$m=65536,t=3,p=4`$..."
   #>
+  [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
   [CmdletBinding()]
   [OutputType([bool])]
   param(
@@ -25,6 +26,6 @@ function Test-PasswordHash {
     [string]$Hash
   )
   process {
-    [PasswordHashing]::VerifyPassword($Password, $Hash)
+    return [PasswordHashing]::VerifyPassword($Password, $Hash)
   }
 }
