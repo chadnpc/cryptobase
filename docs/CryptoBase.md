@@ -17,11 +17,15 @@ cryptobase GetHelp
 "Sensitive Data" | cryptobase ProtectData > secret.bin
 
 # Decrypt data (will prompt for password interactively)
+# Note: Invoke-CryptoBase automatically handles byte unrolling from the pipeline
 Get-Content secret.bin -AsByteStream | cryptobase UnprotectData
 
 # Obfuscate a file (prompts for password and creates file.txt.enc)
 "file.txt" | cryptobase ObfuscateFile
 ```
+
+> [!TIP]
+> The `cryptobase` cmdlet is designed to be pipeline-friendly. When piping bytes, it automatically accumulates them into a single payload before processing. It also ensures that output byte arrays are returned as single objects (using `-NoEnumerate`), preventing them from being unrolled into individual bytes in the next pipeline stage.
 
 ## **Data Protection**
 
