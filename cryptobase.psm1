@@ -166,7 +166,8 @@ EXAMPLES
       [Array]::Clear($key, 0, $key.Length)
     }
     # payload: version(1) + salt(16) + nonce(12) + tag(16) + ciphertext
-    return [byte[]]@(0x01) + $salt + $nonce + $tag + $ciphertext
+    [byte[]]$payload = [byte[]]@(0x01) + $salt + $nonce + $tag + $ciphertext
+    return $payload
   }
 
   static [byte[]] ProtectDataCascade([string]$plaintext) {
@@ -210,7 +211,8 @@ EXAMPLES
     $outerPayload = [XChaCha20Poly1305]::Encrypt($innerPayload, $xchachaKey, $xNonce)
     [Array]::Clear($xchachaKey, 0, $xchachaKey.Length)
 
-    return [byte[]]@(0x02) + $salt + $xNonce + $outerPayload
+    [byte[]]$res = [byte[]]@(0x02) + $salt + $xNonce + $outerPayload
+    return $res
   }
 
   static [byte[]] UnprotectDataCascade([byte[]]$protectedBytes) {
@@ -218,7 +220,7 @@ EXAMPLES
   }
 
   static [byte[]] UnprotectDataCascade([byte[]]$protectedBytes, [securestring]$password) {
-    if ($protectedBytes.Length -lt 58) { throw [ArgumentException]::new("Invalid cascade payload.") }
+    if ($null -eq $protectedBytes -or $protectedBytes.Length -lt 57) { throw [ArgumentException]::new("Invalid cascade payload.") }
     if ($protectedBytes[0] -ne 0x02) { throw [ArgumentException]::new("Unsupported cascade payload version.") }
 
     $salt = [byte[]]$protectedBytes[1..32]
@@ -312,16 +314,15 @@ EXAMPLES
   }
 
   static [byte[]] UnprotectData([byte[]]$protectedBytes, [securestring]$password, [byte[]]$aad) {
-    if ($protectedBytes.Length -lt 45) { throw [ArgumentException]::new("Invalid protected payload.") }
+    if ($null -eq $protectedBytes -or $protectedBytes.Length -lt 45) { throw [ArgumentException]::new("Invalid protected payload.") }
     if ($protectedBytes[0] -ne 0x01) { throw [ArgumentException]::new("Unsupported payload version.") }
-    $salt = [byte[]]::new(16); [Array]::Copy($protectedBytes, 1, $salt, 0, 16)
-    $nonce = [byte[]]::new(12); [Array]::Copy($protectedBytes, 17, $nonce, 0, 12)
-    $tag = [byte[]]::new(16); [Array]::Copy($protectedBytes, 29, $tag, 0, 16)
-    $cipherLen = $protectedBytes.Length - 45
-    $ciphertext = [byte[]]::new($cipherLen); [Array]::Copy($protectedBytes, 45, $ciphertext, 0, $cipherLen)
+    $salt = [byte[]]$protectedBytes[1..16]
+    $nonce = [byte[]]$protectedBytes[17..28]
+    $tag = [byte[]]$protectedBytes[29..44]
+    $ciphertext = [byte[]]$protectedBytes[45..($protectedBytes.Length - 1)]
     $passBytes = [Encoding]::UTF8.GetBytes([CryptoBase]::SecureStringToString($password))
     $key = [Argon2id]::Hash($passBytes, $salt, 65536, 3, 4, 32)
-    $plainbytes = [byte[]]::new($cipherLen)
+    $plainbytes = [byte[]]::new($ciphertext.Length)
     $aes = [System.Security.Cryptography.AesGcm]::new($key)
     try {
       $aes.Decrypt($nonce, $ciphertext, $tag, $plainbytes, $aad)
