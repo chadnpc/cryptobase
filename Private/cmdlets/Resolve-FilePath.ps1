@@ -74,7 +74,7 @@
       if ((Test-Path -Path $GitHubRoot.FullName -PathType Container -ErrorAction Ignore)) {
         $rslvdPaths = $( # Multi-Level directory search / -Recurse :
           switch ($true) {
-                        ([IO.Path]::IsPathFullyQualified($q)) {
+            $([IO.Path]::IsPathFullyQualified($q)) {
               Get-Item -Path $q -ErrorAction Ignore
               break
             }
@@ -82,9 +82,11 @@
               $relPath = '([IO.Path]::GetRelativePath($ExecutionContext.SessionState.Path.CurrentLocation, $_.FullName))'
               $IsMatch = if ($q.Contains('*')) {
                 [scriptblock]::Create("$relPath -like `"$q`" -or `$_.FullName -like `"$q`"")
-              } elseif ($q.EndsWith([IO.Path]::DirectorySeparatorChar)) {
+              }
+              elseif ($q.EndsWith([IO.Path]::DirectorySeparatorChar)) {
                 [scriptblock]::Create("$relPath -like `"$q*`" -or `$_.FullName -like `"$q*`"")
-              } else {
+              }
+              else {
                 [scriptblock]::Create("$relPath -eq `"$q`" -or `$_.FullName -eq `"$q`"")
               }
               $(Get-ChildItem -Path $GitHubRoot.FullName -File -Recurse -ErrorAction Ignore).Where($IsMatch)
@@ -120,7 +122,8 @@
             }
           )
         )
-      } else {
+      }
+      else {
         Write-Verbose $error_Msg
       }
     }
