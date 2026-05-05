@@ -17,11 +17,9 @@ Describe "Integration tests: cryptobase" {
       $msg = "This is a test message"
       $signRes = [CryptoBase]::SignMessage($msg)
       $signRes.Signature.Count | Should BeGreaterThan 0
-      
       $isValid = [CryptoBase]::VerifyMessage($msg, $signRes.Signature, $signRes.PublicKey)
       $isValid | Should Be $true
     }
-    
     It "SignMessage works through Invoke-CryptoBase pipeline" {
       $msg = "Pipeline secret"
       $res = $msg | cryptobase SignMessage
@@ -31,7 +29,7 @@ Describe "Integration tests: cryptobase" {
 
     It "ProtectData and UnprotectData pipeline with mocked password" {
       [CryptoBase]::_SkipReadHostPrompts = $true
-      [CryptoBase]::_Password = ConvertTo-SecureString "testpassword123" -AsPlainText -Force
+      [CryptoBase]::_Password = "testpassword123" | xconvert ToSecurestring
 
       try {
         $plaintext = "Super secret data"
@@ -49,21 +47,18 @@ Describe "Integration tests: cryptobase" {
 
     It "ObfuscateFile and DeobfuscateFile pipeline with mocked password" {
       [CryptoBase]::_SkipReadHostPrompts = $true
-      [CryptoBase]::_Password = ConvertTo-SecureString "obfuscation_pass" -AsPlainText -Force
-      
+      [CryptoBase]::_Password = "obfuscation_pass" | xconvert ToSecurestring
+
       $testFile = "test_obfuscate.txt"
       $encFile = "test_obfuscate.txt.enc"
       Set-Content -Path $testFile -Value "File Content"
-      
+
       try {
         $testFile | cryptobase ObfuscateFile
         Test-Path $encFile | Should Be $true
-        
         Remove-Item $testFile -Force
-        
         $encFile | cryptobase DeobfuscateFile
         Test-Path $testFile | Should Be $true
-        
         $decryptedContent = Get-Content $testFile -Raw
         $decryptedContent.Trim() | Should Be "File Content"
       }
