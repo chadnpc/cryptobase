@@ -132,6 +132,13 @@ enum HashType {
   SHA512 = 2
 }
 
+enum S2KType : byte {
+  Simple = 0
+  Salted = 1
+  Reserved = 2
+  IteratedAndSalted = 3
+  Argon2 = 4
+}
 
 #region KeypairGen_Enums
 
