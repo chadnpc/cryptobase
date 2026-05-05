@@ -2,7 +2,7 @@
 
 The `[cryptobase]` is the main class, it provides high-level convenience methods for common cryptographic tasks.
 
-## **CLI and Pipeline Usage**
+## **CLI**
 
 The `Invoke-CryptoBase` cmdlet (alias: `cryptobase`) provides a CLI-like experience and supports pipeline input. By utilizing single-parameter method overloads, you can pipe data directly into cryptographic operations. If a method requires a password but you don't provide one, you will be prompted securely via `Read-Host -AsSecureString`.
 
