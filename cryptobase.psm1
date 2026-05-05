@@ -47,6 +47,9 @@ using module Private/KMACAuth.psm1
 using module Private/MD5.psm1
 using module Private/opaque.psm1
 using module Private/OpenPgp.psm1
+using module Private/OpenPgpEnums.psm1
+using module Private/OpenPgpCore.psm1
+using module Private/OpenPgpPackets.psm1
 using module Private/OTPKIT.psm1
 using module Private/PasswordHashing.psm1
 using module Private/Pbkdf2.psm1
@@ -428,8 +431,10 @@ $typestoExport = @(
   [MLKemSecurityLevel], [SlhDsaSecurityLevel], [InvalidArgumentException], [CredentialNotFoundException], [IntegrityCheckFailedException], [InvalidPasswordException], [SaltParseException], [BcryptAuthenticationException], [HashInformationException], [KeypairException], [KeyGenerationException], [KeyImportException], [FileMonitor],
   [Hc128], [Hc256], [HkdfCore], [HkdfBuilder], [Keypair], [NamedKeypair], [KeypairGenerationResult], [KeypairHelper], [KeypairGen], [KeypairManager], [KMAC256], [MD5], [Expiration], [HashParser], [HashInformation], [HashFormatDescriptor], [CipherObject], [SecretStore], [KSFConfigType], [opaqueServerLoginState], [opaqueClientRegistrationState],
   [opaqueClientLoginState], [opaqueKSFConfig], [opaqueOpaqueServer], [opaqueOpaqueClient], [KSFConfig], [OpaqueServer], [OpaqueClient], [OPAQUE], [OpenPgp], [OTPKIT], [Argon2id], [Argon2i], [Argon2d], [Scrypt], [Pbkdf2], [MLKemKeyPair], [MLKemEncapsulationResult], [MLKemCore], [MLKemBuilder], [MLDsaSecurityLevel], [MLDsaKeyPair],
-  [MLDsaCore], [MLDsaBuilder], [SlhDsaKeyPair], [SlhDsaCore], [SlhDsaBuilder], [RabbitState], [Rabbit], [RSA], [S2KType], [S2K], [Secp256k1], [Secp256k1SignResult], [Keccak], [KeccakManaged], [IdentityHash], [DoubleSha256], [SHA3256], [SHA3384], [SHA3512], [SHAKE128Managed], [SHAKE256Managed], [KMAC128], [FipsHmacSha256], [BLAKE3],
-  [TripleDES], [Asn1Parser], [PemParser], [SecureBox], [SecureArray], [NoiseProtocol], [VOPRF], [BitwUtil], [Shuffl3r], [SignatureUtils], [CryptobaseUtils], [VaultClient], [X509], [XChaCha20Poly1305], [XOR], [XSalsa20], [CryptoBase]
+  [MLDsaCore], [MLDsaBuilder], [SlhDsaKeyPair], [SlhDsaCore], [SlhDsaBuilder], [RabbitState], [Rabbit], [RSA], [S2KType], [S2K], [PgpS2KSpecifier], [Secp256k1], [Secp256k1SignResult], [Keccak], [KeccakManaged], [IdentityHash], [DoubleSha256], [SHA3256], [SHA3384], [SHA3512], [SHAKE128Managed], [SHAKE256Managed], [KMAC128], [FipsHmacSha256], [BLAKE3],
+  [TripleDES], [Asn1Parser], [PemParser], [SecureBox], [SecureArray], [NoiseProtocol], [VOPRF], [BitwUtil], [Shuffl3r], [SignatureUtils], [CryptobaseUtils], [VaultClient], [X509], [XChaCha20Poly1305], [XOR], [XSalsa20], [CryptoBase],
+  [PgpHashAlgorithmId], [PgpPublicKeyAlgorithm], [PgpPacketTag], [PgpS2KUsage], [PgpCompressionAlgorithm], [PgpSignatureType], [PgpSignatureSubpacketType], [PgpUserAttributeSubpacketType], [PgpPacketFormat], [PgpLiteralDataFormat], [PgpImageEncoding], [PgpRevocationReason],
+  [Mpi], [PgpPacketHeader], [PgpPublicKeyPacket], [PgpSecretKeyPacket], [PgpUserIdPacket], [PgpLiteralDataPacket]
 )
 $TypeAcceleratorsClass = [PsObject].Assembly.GetType('System.Management.Automation.TypeAccelerators')
 # Add type accelerators for every exportable type.
