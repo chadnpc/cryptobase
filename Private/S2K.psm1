@@ -7,14 +7,6 @@ using module ./Utilities.psm1
 using module ./PasswordHashing.psm1
 using module ./Enums.psm1
 
-enum S2KType : byte {
-  Simple = 0
-  Salted = 1
-  Reserved = 2
-  IteratedAndSalted = 3
-  Argon2 = 4
-}
-
 class PgpS2KSpecifier {
   [S2KType] $Type
   [PgpHashAlgorithmId] $HashAlgorithm
@@ -36,12 +28,14 @@ class PgpS2KSpecifier {
     switch ($spec.Type) {
       ([S2KType]::Simple) {
         $offset.Value += 2
+        break
       }
       ([S2KType]::Salted) {
         if ($data.Length -lt $offset.Value + 10) { throw [ArgumentException]::new("Data too short for Salted S2K.") }
         $spec.Salt = [byte[]]::new(8)
         [Array]::Copy($data, $offset.Value + 2, $spec.Salt, 0, 8)
         $offset.Value += 10
+        break
       }
       ([S2KType]::IteratedAndSalted) {
         if ($data.Length -lt $offset.Value + 11) { throw [ArgumentException]::new("Data too short for Iterated S2K.") }
@@ -49,6 +43,7 @@ class PgpS2KSpecifier {
         [Array]::Copy($data, $offset.Value + 2, $spec.Salt, 0, 8)
         $spec.EncodedCount = $data[$offset.Value + 10]
         $offset.Value += 11
+        break
       }
       ([S2KType]::Argon2) {
         if ($data.Length -lt $offset.Value + 21) { throw [ArgumentException]::new("Data too short for Argon2 S2K.") }
@@ -58,6 +53,7 @@ class PgpS2KSpecifier {
         $spec.Argon2Passes = [int]$data[$offset.Value + 19]
         $spec.Argon2Parallelism = [int]$data[$offset.Value + 20]
         $offset.Value += 21
+        break
       }
       default {
         throw [ArgumentException]::new("Unknown S2K type: $($spec.Type)")
@@ -67,37 +63,39 @@ class PgpS2KSpecifier {
   }
 
   [byte[]] Write() {
-    switch ($this.Type) {
+    $res = $null
+    $res = switch ($this.Type) {
       ([S2KType]::Simple) {
-        return [byte[]]@([byte]$this.Type, [byte]$this.HashAlgorithm)
+        [byte[]]@([byte]$this.Type, [byte]$this.HashAlgorithm)
+        break
       }
       ([S2KType]::Salted) {
-        [byte[]]$res = [byte[]]::new(10)
-        $res[0] = [byte]$this.Type
-        $res[1] = [byte]$this.HashAlgorithm
-        [Array]::Copy($this.Salt, 0, $res, 2, 8)
-        return $res
+        [byte[]]$r = [byte[]]::new(10)
+        $r[0] = [byte]$this.Type
+        $r[1] = [byte]$this.HashAlgorithm
+        [void][Array]::Copy($this.Salt, 0, $r, 2, 8)
+        $r; break
       }
       ([S2KType]::IteratedAndSalted) {
-        [byte[]]$res = [byte[]]::new(11)
-        $res[0] = [byte]$this.Type
-        $res[1] = [byte]$this.HashAlgorithm
-        [Array]::Copy($this.Salt, 0, $res, 2, 8)
-        $res[10] = $this.EncodedCount
-        return $res
+        [byte[]]$r = [byte[]]::new(11)
+        $r[0] = [byte]$this.Type
+        $r[1] = [byte]$this.HashAlgorithm
+        [Array]::Copy($this.Salt, 0, $r, 2, 8)
+        $r[10] = $this.EncodedCount
+        $r; break
       }
       ([S2KType]::Argon2) {
-        [byte[]]$res = [byte[]]::new(21)
-        $res[0] = [byte]$this.Type
-        $res[1] = [byte]$this.HashAlgorithm
-        [Array]::Copy($this.Salt, 0, $res, 2, 16)
-        $res[18] = [byte]$this.Argon2MemoryExponent
-        $res[19] = [byte]$this.Argon2Passes
-        $res[20] = [byte]$this.Argon2Parallelism
-        return $res
+        [byte[]]$r = [byte[]]::new(21)
+        $r[0] = [byte]$this.Type
+        $r[1] = [byte]$this.HashAlgorithm
+        [Array]::Copy($this.Salt, 0, $r, 2, 16)
+        $r[18] = [byte]$this.Argon2MemoryExponent
+        $r[19] = [byte]$this.Argon2Passes
+        $r[20] = [byte]$this.Argon2Parallelism
+        $r; break
       }
     }
-    return $null
+    return $res
   }
 
   [long] GetIterationCount() {
@@ -136,24 +134,29 @@ class S2K : CryptobaseUtils {
   }
 
   static [byte[]] Derive([byte[]]$password, [PgpS2KSpecifier]$spec, [int]$keySize) {
-    switch ($spec.Type) {
+    $d = $null
+    $d = switch ($spec.Type) {
       ([S2KType]::Simple) {
-        return [S2K]::SimpleS2K($password, $keySize, $spec.HashAlgorithm)
+        [S2K]::SimpleS2K($password, $keySize, $spec.HashAlgorithm)
+        break
       }
       ([S2KType]::Salted) {
-        return [S2K]::SaltedS2K($password, $spec.Salt, $keySize, $spec.HashAlgorithm)
+        [S2K]::SaltedS2K($password, $spec.Salt, $keySize, $spec.HashAlgorithm)
+        break
       }
       ([S2KType]::IteratedAndSalted) {
-        return [S2K]::IteratedS2K($password, $spec.Salt, $spec.GetIterationCount(), $keySize, $spec.HashAlgorithm)
+        [S2K]::IteratedS2K($password, $spec.Salt, $spec.GetIterationCount(), $keySize, $spec.HashAlgorithm)
+        break
       }
       ([S2KType]::Argon2) {
-        return [S2K]::Argon2S2K($password, $spec.Salt, $spec.Argon2MemoryExponent, $spec.Argon2Passes, $spec.Argon2Parallelism, $keySize)
+        [S2K]::Argon2S2K($password, $spec.Salt, $spec.Argon2MemoryExponent, $spec.Argon2Passes, $spec.Argon2Parallelism, $keySize)
+        break
       }
       default {
         throw [ArgumentException]::new("Unsupported S2K type: $($spec.Type)")
       }
     }
-    return $null
+    return $d
   }
 
   static [long] DecodeIterationCount([byte]$encodedCount) {
@@ -222,28 +225,28 @@ class S2K : CryptobaseUtils {
 
   static hidden [byte[]] HashData([byte[]]$data, [string]$hashAlgorithmName) {
     $result = $null
-    switch ($hashAlgorithmName.ToUpperInvariant()) {
-      "SHA256" { $result = [SHA256]::HashData($data) }
-      "SHA384" { $result = [SHA384]::HashData($data) }
-      "SHA512" { $result = [SHA512]::HashData($data) }
-      "SHA1" { $result = [SHA1]::HashData($data) }
-      "MD5" { $result = [MD5]::HashData($data) }
+    $result = switch ($hashAlgorithmName.ToUpperInvariant()) {
+      "SHA256" { [SHA256]::HashData($data); break }
+      "SHA384" { [SHA384]::HashData($data); break }
+      "SHA512" { [SHA512]::HashData($data); break }
+      "SHA1" { [SHA1]::HashData($data); break }
+      "MD5" { [MD5]::HashData($data); break }
       default { throw [ArgumentException]::new("Unsupported hash algorithm: $hashAlgorithmName") }
     }
     return $result
   }
 
   static hidden [int] GetHashSize([string]$hashAlgorithmName) {
-    $result = $null
-    switch ($hashAlgorithmName.ToUpperInvariant()) {
-      "SHA256" { $result = 32 }
-      "SHA384" { $result = 48 }
-      "SHA512" { $result = 64 }
-      "SHA1" { $result = 20 }
-      "MD5" { $result = 16 }
+    $size = $null
+    $size = switch ($hashAlgorithmName.ToUpperInvariant()) {
+      "SHA256" { 32; break }
+      "SHA384" { 48; break }
+      "SHA512" { 64; break }
+      "SHA1" { 20; break }
+      "MD5" { 16; break }
       default { throw [ArgumentException]::new("Unsupported hash algorithm: $hashAlgorithmName") }
     }
-    return $result
+    return $size
   }
 }
 
