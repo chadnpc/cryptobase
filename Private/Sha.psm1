@@ -21,20 +21,19 @@ class Keccak : System.Security.Cryptography.HashAlgorithm {
   [int] GetHashByteLength() { return $this.HashSizeValue / 8 }
 
   Keccak([int]$hashBitLength) {
-    if ($hashBitLength -notin @(128, 224, 256, 384, 512)) {
-      throw [System.ArgumentException]::new("hashBitLength must be 128, 224, 256, 384, or 512", "hashBitLength")
+    $this.keccakR = switch ($hashBitLength) {
+      128 { 1344; break }
+      224 { 1152; break }
+      256 { 1088; break }
+      384 { 832; break }
+      512 { 576; break }
+      default {
+        throw [System.ArgumentException]::new("hashBitLength must be 128, 224, 256, 384, or 512", "hashBitLength")
+      }
     }
-
+    $this.HashSizeValue = $hashBitLength
     $this.keccakState = [uint64[]]::new(25)
     $this.Initialize()
-    $this.HashSizeValue = $hashBitLength
-    switch ($hashBitLength) {
-      128 { $this.keccakR = 1344 }
-      224 { $this.keccakR = 1152 }
-      256 { $this.keccakR = 1088 }
-      384 { $this.keccakR = 832 }
-      512 { $this.keccakR = 576 }
-    }
     $this.RoundConstants = [uint64[]]@(
       0x0000000000000001uL, 0x0000000000008082uL, 0x800000000000808auL, 0x8000000080008000uL,
       0x000000000000808buL, 0x0000000080000001uL, 0x8000000080008081uL, 0x8000000000008009uL,
@@ -866,20 +865,19 @@ class KMAC128 {
   [int] GetHashByteLength() { return $this.HashSizeValue / 8 }
 
   KMAC128([int]$hashBitLength) {
-    if ($hashBitLength -notin @(128, 224, 256, 384, 512)) {
-      throw [System.ArgumentException]::new("hashBitLength must be 128, 224, 256, 384, or 512", "hashBitLength")
+    $this.keccakR = switch ($hashBitLength) {
+      128 { 1344; break }  # SHAKE128 rate
+      224 { 1152; break }
+      256 { 1088; break }
+      384 { 832; break }
+      512 { 576; break }
+      default {
+        throw [System.ArgumentException]::new("hashBitLength must be 128, 224, 256, 384, or 512", "hashBitLength")
+      }
     }
-
+    $this.HashSizeValue = $hashBitLength
     $this.keccakState = [uint64[]]::new(25)
     $this.Initialize()
-    $this.HashSizeValue = $hashBitLength
-    switch ($hashBitLength) {
-      128 { $this.keccakR = 1344 }  # SHAKE128 rate
-      224 { $this.keccakR = 1152 }
-      256 { $this.keccakR = 1088 }
-      384 { $this.keccakR = 832 }
-      512 { $this.keccakR = 576 }
-    }
     $this.RoundConstants = [uint64[]]@(
       0x0000000000000001uL, 0x0000000000008082uL, 0x800000000000808auL, 0x8000000080008000uL,
       0x000000000000808buL, 0x0000000080000001uL, 0x8000000080008081uL, 0x8000000000008009uL,
