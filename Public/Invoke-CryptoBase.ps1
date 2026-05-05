@@ -1,4 +1,4 @@
-﻿using namespace System.Management.Automation
+using namespace System.Management.Automation
 function Invoke-CryptoBase {
   #.DESCRIPTION
   #  Creates a custom CryptoBase object and Invokes methods on it.
@@ -39,25 +39,39 @@ function Invoke-CryptoBase {
     $InputObject
   )
   begin {
-    $result = $null
-    $crypt = [CryptoBase]::new()
-  }
-  process {
-    $Method = [string]::IsNullOrWhiteSpace($Method) ? "GetHelp" : $Method
-    $InvalidMethods = $Method.Where({ $_ -notin [CryptoBase]::Methods.Name })
-    if ($InvalidMethods.Count -gt 0) {
+    $crypt = [CryptoBase]::new(); $res = $null
+    $methodName = [string]::IsNullOrWhiteSpace($Method) ? "GetHelp" : $Method
+
+    # Validate method exists
+    if ($methodName -notin [CryptoBase]::Methods.Name) {
       $PSCmdlet.ThrowTerminatingError([System.Management.Automation.ErrorRecord]::new(
-          [System.InvalidOperationException]::new("Please use valid method names. Methods ($($InvalidMethods -join ', ')) were not found.",
-            [System.Management.Automation.MethodInvocationException]::new("")),
+          [System.InvalidOperationException]::new("Method '$methodName' was not found in CryptoBase."),
           "METHOD_NOT_FOUND",
           "InvalidArgument",
           $null
         )
       )
     }
-    $result = $PSBoundParameters.ContainsKey("InputObject")? ($crypt::$Method($InputObject)) : $crypt::$Method()
+  }
+  process {
+    if ($PSBoundParameters.ContainsKey("InputObject")) {
+      if ($InputObject -is [byte]) {
+        $buffer = [System.Collections.Generic.List[byte]]::new()
+        $buffer.Add($InputObject)
+        # Accumulate unrolled bytes from pipeline
+        $res = $crypt::$methodName(@(, $buffer.ToArray()))
+      }
+      else {
+        # Process other types (strings, paths, or already-rolled byte[]) immediately
+        $res = $crypt::$methodName($InputObject)
+      }
+    }
+    else {
+      # No parameter input: execute method without arguments (e.g., GetHelp)
+      $res = $crypt::$methodName()
+    }
   }
   end {
-    return $result
+    return $res
   }
 }
