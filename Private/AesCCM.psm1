@@ -23,16 +23,16 @@ using module ./Exceptions.psm1
 # .EXAMPLE
 #   $key = [byte[]]::new(16)
 #   $nonce = [byte[]]::new(13)
-#   $ciphertext = [AesCCM]::Encrypt($key, $nonce, [System.Text.Encoding]::UTF8.GetBytes("Hello"))
+#   $ciphertext = [AesCCMCore]::Encrypt($key, $nonce, [System.Text.Encoding]::UTF8.GetBytes("Hello"))
 # .NOTES
 #   Requires .NET 8+ native implementation.
-class AesCCM {
+class AesCCMCore {
   hidden [byte[]] $_key
   hidden [byte[]] $_macKey
 
-  AesCCM() {
+  AesCCMCore() {
     # Generate a random 32-byte key and a separate 32-byte MAC key
-    $this._key    = [byte[]]::new(32)
+    $this._key = [byte[]]::new(32)
     $this._macKey = [byte[]]::new(32)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($this._key)
     [System.Security.Cryptography.RandomNumberGenerator]::Fill($this._macKey)
@@ -47,17 +47,17 @@ class AesCCM {
     $ct = $encryptor.TransformFinalBlock($plainbytes, 0, $plainbytes.Length)
     $payload = $aes.IV + $ct
     $hmac = [System.Security.Cryptography.HMACSHA256]::new($this._macKey)
-    $tag  = $hmac.ComputeHash($payload)
+    $tag = $hmac.ComputeHash($payload)
     return $payload + $tag
   }
 
   [byte[]] Decrypt([byte[]]$ciphertext) {
     # Validate HMAC tag first (16-byte IV + ciphertext + 32-byte tag)
     if ($ciphertext.Length -lt 48) { throw [System.Security.Cryptography.CryptographicException]::new('Ciphertext too short') }
-    $tagOff     = $ciphertext.Length - 32
-    $payload    = $ciphertext[0..($tagOff - 1)]
-    $tag        = $ciphertext[$tagOff..($ciphertext.Length - 1)]
-    $hmac       = [System.Security.Cryptography.HMACSHA256]::new($this._macKey)
+    $tagOff = $ciphertext.Length - 32
+    $payload = $ciphertext[0..($tagOff - 1)]
+    $tag = $ciphertext[$tagOff..($ciphertext.Length - 1)]
+    $hmac = [System.Security.Cryptography.HMACSHA256]::new($this._macKey)
     $expectedTag = $hmac.ComputeHash($payload)
     # Constant-time comparison
     [int]$diff = 0
@@ -65,7 +65,7 @@ class AesCCM {
     if ($diff -ne 0) { throw [System.Security.Cryptography.CryptographicException]::new('Authentication tag mismatch') }
     $aes = [System.Security.Cryptography.Aes]::Create()
     $aes.Key = $this._key
-    $aes.IV  = $payload[0..15]
+    $aes.IV = $payload[0..15]
     $decryptor = $aes.CreateDecryptor()
     return $decryptor.TransformFinalBlock($payload, 16, $payload.Length - 16)
   }
@@ -87,7 +87,8 @@ class AesCCM {
         [Array]::Copy($ciphertext, 0, $result, 0, $ciphertext.Length)
         [Array]::Copy($tag, 0, $result, $ciphertext.Length, $TagLength)
         return $result
-      } finally {
+      }
+      finally {
         $ccm.Dispose()
       }
     }
@@ -109,9 +110,11 @@ class AesCCM {
         [Array]::Copy($Ciphertext, $Ciphertext.Length - $TagLength, $tag, 0, $TagLength)
         $ccm.Decrypt($Nonce, $Ciphertext[0..($Ciphertext.Length - $TagLength - 1)], $plainbytes, $tag, $AssociatedData)
         return $plainbytes
-      } catch {
+      }
+      catch {
         throw [System.Security.Cryptography.CryptographicException]::new("Decryption failed")
-      } finally {
+      }
+      finally {
         $ccm.Dispose()
       }
     }
