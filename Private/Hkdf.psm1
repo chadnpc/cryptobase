@@ -22,8 +22,8 @@ using namespace System.Security.Cryptography
 #     $ikm = [System.Text.Encoding]::UTF8.GetBytes("master-key")
 #     $salt = [System.Text.Encoding]::UTF8.GetBytes("salt")
 #     $info = [System.Text.Encoding]::UTF8.GetBytes("app-info")
-#     [HKDF]::DeriveKey($ikm, $salt, $info, 32)
-class HKDF {
+#     [HkdfCore]::DeriveKey($ikm, $salt, $info, 32)
+class HkdfCore {
   static [byte[]] DeriveKey([byte[]]$IKM, [byte[]]$Salt, [byte[]]$Info, [int]$OutputLength) {
     if ($null -eq $IKM) { throw [System.ArgumentNullException]::new("IKM") }
     if ($OutputLength -le 0) { throw [System.ArgumentOutOfRangeException]::new("OutputLength") }
@@ -34,14 +34,15 @@ class HKDF {
       $hkdf = $hkdfType::new()
       try {
         return $hkdf.DeriveKey($IKM, $Salt, $Info, $OutputLength)
-      } finally {
+      }
+      finally {
         $hkdf.Dispose()
       }
     }
 
     # Fall back to manual HKDF implementation
-    return [HKDF]::HkdfExpand(
-      [HKDF]::HkdfExtract($IKM, $Salt),
+    return [HkdfCore]::HkdfExpand(
+      [HkdfCore]::HkdfExtract($IKM, $Salt),
       $Info,
       $OutputLength
     )
@@ -55,7 +56,8 @@ class HKDF {
     try {
       $hmac.Key = $Salt
       return $hmac.ComputeHash($IKM)
-    } finally {
+    }
+    finally {
       $hmac.Dispose()
     }
   }
@@ -90,7 +92,8 @@ class HKDF {
       }
 
       return $OKM
-    } finally {
+    }
+    finally {
       $hmac.Dispose()
     }
   }
