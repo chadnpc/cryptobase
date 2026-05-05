@@ -37,3 +37,37 @@ $ciphertext = [XSalsa20]::Encrypt($data, $key, $nonce, $counter)
 XSalsa20 is a **pure stream cipher** and does **not** provide built-in authentication (integrity). For most applications, you should use an AEAD mode like **XChaCha20-Poly1305** or **AES-GCM**. 
 
 If you use XSalsa20, you must combine it with a MAC (like Poly1305 or HMAC) to ensure the ciphertext has not been tampered with.
+
+
+## API Documentation
+
+
+## Classes
+
+### XSalsa20
+
+#### Properties
+
+- $type $Constants
+- $type $KEY_SIZE
+- $type $NONCE_SIZE
+- $type $BLOCK_SIZE
+
+#### Methods
+
+- `static [byte[]] Encrypt($inputbytes, $key, $nonce)`
+- `static [byte[]] Encrypt($inputbytes, $key, $nonce, $counter)`
+- `static [byte[]] Decrypt($inputbytes, $key, $nonce)`
+- `static [byte[]] Decrypt($inputbytes, $key, $nonce, $counter)`
+- `static [byte[]] Transform($inputbytes, $key, $nonce, $counter)`
+- `static hidden [void] DeriveKeyAndNonce($derivedKey, $derivedNonce, $key, $nonce)`
+- `static hidden [void] HSalsa20($output, $key, $nonce)`
+- `static hidden [void] InitializeSalsa20State($state, $key, $nonce, $counter)`
+- `static hidden [void] GenerateKeystreamBlock($keystream, $state)`
+- `static hidden [void] QuarterRound($state, $a, $b, $c, $d)`
+- `static hidden [uint] RotateLeft($value, $bits)`
+- `static hidden [uint] ReadUInt32LE($buf, $off)`
+- `static hidden [void] WriteUInt32LE($buf, $off, $val)`
+
+
+

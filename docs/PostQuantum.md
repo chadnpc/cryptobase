@@ -53,3 +53,172 @@ Standardized as FIPS 205 (formerly SPHINCS+). A digital signature algorithm base
 ## Implementation Note
 
 > **IMPORTANT**: These algorithms are currently implemented as **stubs** or **wrappers** for future .NET features. In current .NET versions, they use secure placeholders (like HMAC-SHA256) for functional testing, but should not be relied upon for actual quantum resistance until the environment supports the native FIPS standards.
+
+
+## API Documentation
+
+
+## Enums
+
+### MLDsaSecurityLevel
+`powershell
+enum MLDsaSecurityLevel {
+  MLDsa44
+  MLDsa65
+  MLDsa87
+}
+``n
+## Classes
+
+### MLKemKeyPair
+
+#### Properties
+
+- $type $PublicKey
+- $type $PrivateKey
+- $type $Level
+
+#### Methods
+
+- `[void] MLKemKeyPair($pub, $priv, $level)`
+- `[byte[]] Decapsulate($ciphertext)`
+
+### MLKemEncapsulationResult
+
+#### Properties
+
+- $type $Ciphertext
+- $type $SharedSecret
+
+#### Methods
+
+- `[void] MLKemEncapsulationResult($ct, $ss)`
+
+### MLKemCore
+
+#### Methods
+
+- `[void] MLKemCore()`
+- `static [bool] IsSupported()`
+- `static [MLKemKeyPair] GenerateKeyPair()`
+- `static [MLKemKeyPair] GenerateKeyPair($Level)`
+- `static [MLKemEncapsulationResult] Encapsulate($PublicKey)`
+- `static [byte[]] Decapsulate($Ciphertext, $PrivateKey)`
+- `static [MLKemSecurityLevel] GetRecommendedLevel($securityBits)`
+- `static [hashtable] GetLevelInfo($level)`
+
+### MLKemBuilder
+
+#### Properties
+
+- $type $_securityLevel
+- $type $_publicKey
+- $type $_keyPair
+
+#### Methods
+
+- `static [MLKemBuilder] Create()`
+- `[MLKemBuilder] WithSecurityLevel($level)`
+- `[MLKemBuilder] WithSecurityBits($bits)`
+- `[MLKemBuilder] WithPublicKey($publicKey)`
+- `[MLKemBuilder] WithKeyPair($keyPair)`
+- `[MLKemKeyPair] GenerateKeyPair()`
+- `[MLKemEncapsulationResult] Encapsulate()`
+- `[byte[]] Decapsulate($ciphertext)`
+
+### MLDsaKeyPair
+
+#### Properties
+
+- $type $PublicKey
+- $type $PrivateKey
+- $type $Level
+
+#### Methods
+
+- `[void] MLDsaKeyPair($public, $private, $level)`
+
+### MLDsaCore
+
+#### Methods
+
+- `[void] MLDsaCore()`
+- `static [MLDsaKeyPair] GenerateKeyPair()`
+- `static [MLDsaKeyPair] GenerateKeyPair($level)`
+- `static [byte[]] Sign($message, $privateKey)`
+- `static [byte[]] Sign($message, $privateKey, $context, $level)`
+- `static [bool] Verify($message, $signature, $publicKey)`
+- `static [bool] Verify($message, $signature, $publicKey, $context)`
+- `static [int] GetSignatureSize($level)`
+
+### MLDsaBuilder
+
+#### Properties
+
+- $type $_level
+- $type $_keyPair
+- $type $_publicKey
+- $type $_data
+- $type $_context
+
+#### Methods
+
+- `static [MLDsaBuilder] Create()`
+- `[MLDsaBuilder] WithSecurityLevel($level)`
+- `[MLDsaBuilder] WithKeyPair($keyPair)`
+- `[MLDsaBuilder] WithPublicKey($publicKey)`
+- `[MLDsaBuilder] WithData($data)`
+- `[MLDsaBuilder] WithContext($context)`
+- `[MLDsaKeyPair] GenerateKeyPair()`
+- `[byte[]] Sign()`
+- `[bool] Verify($signature)`
+
+### SlhDsaKeyPair
+
+#### Properties
+
+- $type $PublicKey
+- $type $PrivateKey
+- $type $Level
+
+#### Methods
+
+- `[void] SlhDsaKeyPair($public, $private, $level)`
+
+### SlhDsaCore
+
+#### Methods
+
+- `[void] SlhDsaCore()`
+- `static [SlhDsaKeyPair] GenerateKeyPair()`
+- `static [SlhDsaKeyPair] GenerateKeyPair($level)`
+- `static [byte[]] Sign($message, $privateKey)`
+- `static [byte[]] Sign($message, $privateKey, $context, $level)`
+- `static [bool] Verify($message, $signature, $publicKey)`
+- `static [bool] Verify($message, $signature, $publicKey, $context)`
+- `static [int] GetSignatureSize($level)`
+
+### SlhDsaBuilder
+
+#### Properties
+
+- $type $_level
+- $type $_keyPair
+- $type $_publicKey
+- $type $_data
+- $type $_context
+
+#### Methods
+
+- `static [SlhDsaBuilder] Create()`
+- `[SlhDsaBuilder] WithSecurityLevel($level)`
+- `[SlhDsaBuilder] WithKeyPair($keyPair)`
+- `[SlhDsaBuilder] WithPublicKey($publicKey)`
+- `[SlhDsaBuilder] WithData($data)`
+- `[SlhDsaBuilder] WithContext($context)`
+- `[SlhDsaKeyPair] GenerateKeyPair()`
+- `[byte[]] Sign()`
+- `[bool] Verify($signature)`
+
+
+

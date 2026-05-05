@@ -50,3 +50,32 @@ $isValid = [XChaCha20Poly1305]::Verify($plainbytes, $tag, $key, $nonce)
 Standard ChaCha20 uses a 96-bit nonce. While sufficient for many uses, it is risky to generate randomly if you encrypt a large number of messages with the same key (due to the Birthday Paradox). 
 
 **XChaCha20** extends the nonce to 192 bits, which is large enough to be safely generated randomly for an practically unlimited number of messages with the same key.
+
+
+## API Documentation
+
+
+## Classes
+
+### XChaCha20Poly1305
+
+#### Properties
+
+- $type $KeySize
+- $type $NonceSize
+- $type $TagSize
+
+#### Methods
+
+- `static [byte[]] HChaCha20($key, $nonce)`
+- `static [byte[]] Encrypt($plainbytes, $key, $nonce)`
+- `static [byte[]] Encrypt($plainbytes, $key, $nonce, $aad)`
+- `static [byte[]] Decrypt($inputbytes, $key, $nonce)`
+- `static [byte[]] Decrypt($inputbytes, $key, $nonce, $aad)`
+- `static [byte[]] Authenticate($plainbytes, $key, $nonce)`
+- `static [byte[]] Authenticate($plainbytes, $key, $nonce, $aad)`
+- `static [bool] Verify($plainbytes, $tag, $key, $nonce)`
+- `static [bool] Verify($plainbytes, $tag, $key, $nonce, $aad)`
+
+
+

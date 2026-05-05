@@ -47,3 +47,30 @@ $isValid = [OTPKIT]::VerifyHOTP($otp, $phone, $token)
 
 - **Base32 to Hex**: `[OTPKIT]::ConvertBase32ToHex($base32)`
 - **Twilio Integration**: `[OTPKIT]::Send_TWILIO_SMS($phone, $message)` (Requires Twilio credentials set in the submodule).
+
+
+## API Documentation
+
+
+## Classes
+
+### OTPKIT
+
+#### Properties
+
+- $type $key
+
+#### Methods
+
+- `static [string] CreateHOTP($SECRET, $Phone)`
+- `static [string] CreateHOTP($phone, $otp)`
+- `static [string] CreateHOTP($phone, $otp, $expiresAfter)`
+- `static [bool] Send_TWILIO_SMS($PhoneNumber, $Message)`
+- `static [bool] VerifyHOTP($otp, $phone, $hash)`
+- `static [string] ParseOtpUrl($otpURL)`
+- `static [string] GetOtp($SECRET)`
+- `static [string] GetOtp($SECRET, $LENGTH, $WINDOW)`
+- `static [string] ConvertBase32ToHex($base32)`
+
+
+

@@ -40,3 +40,60 @@ catch {
 ## Performance Note
 
 OCB is generally faster than GCM in software implementations because it requires fewer operations per block. However, it was previously encumbered by patents (which have now expired or been granted free licenses for most uses).
+
+
+## API Documentation
+
+
+## Classes
+
+### AesOcbCore
+
+#### Properties
+
+- $type $BlockSize
+- $type $MinNonceSize
+- $type $MaxNonceSize
+- $type $DefaultNonceSize
+- $type $TagSize
+
+#### Methods
+
+- `static [void] ValidateParameters($Key, $Nonce)`
+- `static [void] Double($Output, $inputbytes)`
+- `static [void] GetL($Li, $LStar, $i)`
+- `static [void] XorBlock($Output, $A, $B)`
+- `static [void] EncryptBlock($Encryptor, $Output, $inputbytes, $InBuf, $OutBuf)`
+- `static [void] DecryptBlock($Decryptor, $Output, $inputbytes, $InBuf, $OutBuf)`
+- `static [void] InitializeOffset($Encryptor, $Offset, $Nonce, $LDollar, $InBuf, $OutBuf)`
+- `static [void] ProcessAssociatedData($Encryptor, $Auth, $AssociatedData, $LDollar, $InBuf, $OutBuf)`
+- `static [void] ComputeTag($Encryptor, $Tag, $Offset, $Checksum, $LDollar, $AssociatedData, $InBuf, $OutBuf)`
+- `static [bool] ConstantTimeEquals($A, $B)`
+- `static [hashtable] Encrypt($plainbytes, $Key)`
+- `static [hashtable] Encrypt($plainbytes, $Key, $Nonce)`
+- `static [hashtable] Encrypt($plainbytes, $Key, $Nonce, $AssociatedData)`
+- `static [hashtable] Encrypt($plainbytes, $Key, $Nonce, $AssociatedData, $DeterministicMode)`
+- `static [byte[]] Decrypt($Ciphertext, $Key, $Nonce)`
+- `static [byte[]] Decrypt($Ciphertext, $Key, $Nonce, $AssociatedData)`
+
+### AesOcb
+
+#### Properties
+
+- $type $_key
+- $type $_nonce
+- $type $_associatedData
+
+#### Methods
+
+- `[void] AesOcb()`
+- `[AesOcb] WithKey($Key)`
+- `[AesOcb] WithNonce($Nonce)`
+- `[AesOcb] WithRandomNonce($NonceSize)`
+- `[AesOcb] WithAssociatedData($AssociatedData)`
+- `[byte[]] Encrypt($plainbytes)`
+- `[byte[]] Decrypt($Ciphertext)`
+- `[byte[]] GetNonce()`
+
+
+

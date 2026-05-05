@@ -59,3 +59,83 @@ $VerbosePreference = 'Continue'
 
 ### Parallel Hashing
 BCrypt is single-threaded by design. To hash multiple passwords in parallel, you should use PowerShell's `ForEach-Object -Parallel` or Background Jobs.
+
+
+## API Documentation
+
+
+## Classes
+
+### BCryptCore
+
+#### Properties
+
+- $type $DefaultRounds
+- $type $BCryptSaltLen
+- $type $SafeUTF8
+- $type $BlowfishNumRounds
+- $type $RngCsp
+- $type $POrig
+- $type $SOrig
+- $type $BfCryptCiphertext
+- $type $BfCryptCiphertextLength
+- $type $Base64Code
+- $type $Index64
+- $type $EmptyString
+- $type $DefaultHashVersion
+- $type $Nul
+- $type $MinRounds
+- $type $MaxRounds
+- $type $_p
+- $type $_s
+
+#### Methods
+
+- `static [string] CreatePasswordHash($inputKey, $salt, $hashType, $enhancedHashKeyGen)`
+- `static [string] HashBytes($inputBytes, $extractedSalt, $bcryptMinorRevision, $workFactor)`
+- `static [string] GenerateSalt($workFactor, $bcryptMinorRevision)`
+- `static [bool] SecureEquals($a, $b)`
+- `static [char[]] EncodeBase64($byteArray, $length)`
+- `static [byte[]] DecodeBase64($encodedString, $maximumBytes)`
+- `static [int] Char64($character)`
+- `[void] Encipher($blockArray, $offset)`
+- `static [uint32] StreamToWord($data, $offset)`
+- `[void] InitializeKey()`
+- `[void] Key($keyBytes)`
+- `[void] EKSKey($saltBytes, $inputBytes)`
+- `[byte[]] CryptRaw($inputBytes, $saltBytes, $workFactor)`
+
+### BCrypt
+
+#### Methods
+
+- `static [string] ValidateAndUpgradeHash($currentKey, $currentHash, $newKey, $workFactor, $forceWorkFactor)`
+- `static [string] ValidateAndUpgradeHash($currentKey, $currentHash, $newKey, $workFactor)`
+- `static [string] ValidateAndUpgradeHash($currentKey, $currentHash, $newKey)`
+- `static [bool] Verify($text, $hash)`
+- `static [string] HashPassword($inputKey, $workFactor)`
+- `static [string] HashPassword($inputKey)`
+- `static [string] HashPassword($inputKey, $salt)`
+- `static [bool] PasswordNeedsRehash($hash, $newMinimumWorkLoad)`
+- `static [HashInformation] InterrogateHash($hash)`
+
+### BCryptExtendedV3
+
+#### Properties
+
+- $type $DefaultEnhancedHashType
+
+#### Methods
+
+- `static [string] HashPassword($hmacKey, $inputKey, $workFactor, $hashType)`
+- `static [string] HashPassword($hmacKey, $inputKey, $workFactor)`
+- `static [string] HashPassword($hmacKey, $inputKey)`
+- `static [string] HashPassword($hmacKey, $inputKey, $salt, $hashType)`
+- `static [string] HashPassword($hmacKey, $inputKey, $salt)`
+- `static [byte[]] EnhancedHash($hmacKey, $inputString, $hashType, $bcryptMinorRevision)`
+- `static [bool] Verify($hmacKey, $inputKey, $hash, $hashType)`
+- `static [bool] Verify($hmacKey, $inputKey, $hash)`
+- `static [string] ValidateAndUpgradeHash($hmacKey, $currentKey, $currentHash, $currentKeyHashType, $newKey, $hashType, $workFactor, $forceWorkFactor)`
+
+
+

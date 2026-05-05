@@ -50,3 +50,32 @@ $hash = [Blake2b]::ComputeHash($data, 64, $key, $salt, $personal)
 ## Comparison with BLAKE3
 
 While **BLAKE3** is generally faster and offers infinite extendability, **BLAKE2b** is still the standard for many existing protocols and provides excellent performance on 64-bit systems.
+
+
+## API Documentation
+
+
+## Classes
+
+### Blake2b
+
+#### Properties
+
+- $type $Blake2bIv
+- $type $Blake2bSigma
+
+#### Methods
+
+- `static [byte[]] ComputeHash($inputbytes)`
+- `static [byte[]] ComputeHash($inputbytes, $outputLength)`
+- `static [byte[]] ComputeHash($inputbytes, $outputLength, $key)`
+- `static [byte[]] ComputeHash($inputbytes, $outputLength, $key, $salt, $personalization)`
+- `static hidden [uint64[]] GetParamWords($digestSize, $keyLength, $salt, $personalization)`
+- `static hidden [void] Compress($h, $buffer, $bytesCompressed, $isLastBlock, $m, $v)`
+- `static hidden [void] G($v, $a, $b, $c, $d, $x, $y)`
+- `static hidden [uint64] RotateRight($value, $offset)`
+- `static hidden [uint64] ReadUInt64LE($buf, $off)`
+- `static hidden [void] WriteUInt64LE($buf, $off, $val)`
+
+
+

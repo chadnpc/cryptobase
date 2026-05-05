@@ -33,3 +33,33 @@ catch {
 ## When to use SIV?
 
 Use AES-SIV when you cannot guarantee that nonces will never be reused (e.g., in stateless systems or embedded devices without good entropy), or when you need deterministic encryption (where the same input always produces the same output) without sacrificing authentication.
+
+
+## API Documentation
+
+
+## Classes
+
+### AesSIV
+
+#### Properties
+
+- $type $_key
+
+#### Methods
+
+- `[void] AesSIV()`
+- `[void] AesSIV($Key)`
+- `[byte[]] Encrypt($data)`
+- `[byte[]] Decrypt($CipherBytes)`
+- `static [byte[]] Encrypt($Key, $data)`
+- `static [byte[]] Encrypt($Key, $data, $AssociatedData)`
+- `static [byte[]] Decrypt($Key, $data)`
+- `static [byte[]] Decrypt($Key, $data, $AssociatedData)`
+- `static hidden [byte[]] EncryptGCM($Key, $data, $AssociatedData)`
+- `static hidden [byte[]] DecryptGCM($Key, $Data, $Aad)`
+- `static [int] NonceSize()`
+- `static [int] TagSize()`
+
+
+

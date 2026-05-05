@@ -54,3 +54,102 @@ $result = [Armor]::Decode($armoredKey)
 ## Security Note
 
 ASCII armor includes a **CRC24** checksum at the bottom (prefixed by `=`). `CryptoBase` automatically verifies this checksum during decoding to ensure the data has not been corrupted during transport.
+
+
+## API Documentation
+
+
+## Classes
+
+### Mpi
+
+#### Methods
+
+- `static [BigInteger] Read($data, $offset)`
+- `static [byte[]] Write($value)`
+
+### PgpPacketHeader
+
+#### Properties
+
+- $type $Tag
+- $type $Format
+- $type $Length
+- $type $IsPartial
+- $type $HeaderLength
+
+#### Methods
+
+- `static [PgpPacketHeader] Read($data, $offset)`
+- `static hidden [hashtable] ReadNewLength($data, $offset)`
+
+### PgpPublicKeyPacket
+
+#### Properties
+
+- $type $Version
+- $type $CreationTime
+- $type $Algorithm
+- $type $KeyMaterial
+- $type $IsSubkey
+
+#### Methods
+
+- `[void] PgpPublicKeyPacket($version, $creationTime, $algorithm, $keyMaterial, $isSubkey)`
+- `static [PgpPublicKeyPacket] Read($data, $isSubkey)`
+- `[byte[]] ToArray()`
+
+### PgpSecretKeyPacket
+
+#### Properties
+
+- $type $PublicKey
+- $type $S2KUsage
+- $type $CipherAlgorithm
+- $type $S2KSpecifier
+- $type $IV
+- $type $SecretKeyMaterial
+
+#### Methods
+
+- `[void] PgpSecretKeyPacket($publicKey, $s2kUsage, $cipherAlgorithm, $s2kSpecifier, $iv, $secretKeyMaterial)`
+- `static [PgpSecretKeyPacket] Read($data, $isSubkey)`
+- `static hidden [int] GetCipherBlockSize($cipherAlg)`
+- `[byte[]] ToArray()`
+
+### PgpUserIdPacket
+
+#### Properties
+
+- $type $UserId
+
+#### Methods
+
+- `[void] PgpUserIdPacket($userId)`
+- `static [PgpUserIdPacket] Read($data)`
+- `[byte[]] ToArray()`
+
+### PgpLiteralDataPacket
+
+#### Properties
+
+- $type $Format
+- $type $FileName
+- $type $Date
+- $type $Data
+
+#### Methods
+
+- `[void] PgpLiteralDataPacket($format, $fileName, $date, $data)`
+- `static [PgpLiteralDataPacket] Read($data)`
+- `[byte[]] ToArray()`
+
+### OpenPgp
+
+#### Methods
+
+- `static [string] ArmorMessage($data, $headers)`
+- `static [byte[]] DearmorMessage($armoredText)`
+
+
+

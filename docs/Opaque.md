@@ -75,3 +75,148 @@ Available Config Types:
 - `MemoryConstrained` (Default: 64MB, 3 iterations)
 - `RfcDraftRecommended` (2GB, 1 iteration)
 - `Custom` (Specify iterations, memory, parallelism)
+
+## API Documentation
+
+
+## Enums
+
+### KSFConfigType
+`powershell
+enum KSFConfigType {
+  MemoryConstrained
+  RfcDraftRecommended
+  Custom
+}
+``n
+## Classes
+
+### opaqueServerLoginState
+
+#### Properties
+
+- $type $StateData
+
+### opaqueClientRegistrationState
+
+#### Properties
+
+- $type $StateData
+
+### opaqueClientLoginState
+
+#### Properties
+
+- $type $StateData
+
+### opaqueKSFConfig
+
+#### Properties
+
+- $type $Type
+- $type $Iterations
+- $type $Memory
+- $type $Parallelism
+
+#### Methods
+
+- `[void] opaqueKSFConfig($type, $iterations, $memory, $parallelism)`
+- `static [opaqueKSFConfig] Create($type)`
+- `static [opaqueKSFConfig] Create($type, $iterations, $memory, $parallelism)`
+
+### opaqueOpaqueServer
+
+#### Properties
+
+- $type $ServerSetup
+
+#### Methods
+
+- `[void] opaqueOpaqueServer()`
+- `[bool] CreateSetup($setup)`
+- `[bool] CreateRegistrationResponse($serverSetup, $userIdentifier, $registrationRequest, $response)`
+- `[bool] StartLogin($serverSetup, $startLoginRequest, $userIdentifier, $registrationRecord, $clientIdentifier, $serverIdentifier, $result)`
+- `[bool] FinishLogin($serverLoginState, $finishLoginRequest, $sessionKey)`
+- `[bool] GetPublicKey($serverSetup, $publicKey)`
+
+### opaqueOpaqueClient
+
+#### Methods
+
+- `[void] opaqueOpaqueClient()`
+- `[bool] StartRegistration($passw0rd, $result)`
+- `[bool] FinishRegistration($passw0rd, $registrationResponse, $clientRegistrationState, $clientIdentifier, $serverIdentifier, $config, $result)`
+- `[bool] StartLogin($passw0rd, $result)`
+- `[bool] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $clientIdentifier, $serverIdentifier, $config, $result)`
+
+### KSFConfig
+
+#### Properties
+
+- $type $_config
+
+#### Methods
+
+- `[void] KSFConfig($config)`
+- `static [KSFConfig] Create($type)`
+- `static [KSFConfig] Create($type, $iterations, $memory, $parallelism)`
+
+### OpaqueServer
+
+#### Properties
+
+- $type $_server
+
+#### Methods
+
+- `[void] OpaqueServer()`
+- `[string] CreateSetup()`
+- `[string] CreateRegistrationResponse($serverSetup, $userIdentifier, $registrationRequest)`
+- `[PSCustomObject] StartLogin($serverSetup, $startLoginRequest, $userIdentifier, $registrationRecord)`
+- `[PSCustomObject] StartLogin($serverSetup, $startLoginRequest, $userIdentifier, $registrationRecord, $clientIdentifier)`
+- `[PSCustomObject] StartLogin($serverSetup, $startLoginRequest, $userIdentifier, $registrationRecord, $clientIdentifier, $serverIdentifier)`
+- `[string] FinishLogin($serverLoginState, $finishLoginRequest)`
+- `[string] GetPublicKey($serverSetup)`
+
+### OpaqueClient
+
+#### Properties
+
+- $type $_client
+
+#### Methods
+
+- `[void] OpaqueClient()`
+- `[PSCustomObject] StartRegistration($passw0rd)`
+- `[PSCustomObject] FinishRegistration($passw0rd, $registrationResponse, $clientRegistrationState)`
+- `[PSCustomObject] FinishRegistration($passw0rd, $registrationResponse, $clientRegistrationState, $clientIdentifier)`
+- `[PSCustomObject] FinishRegistration($passw0rd, $registrationResponse, $clientRegistrationState, $clientIdentifier, $serverIdentifier)`
+- `[PSCustomObject] FinishRegistration($passw0rd, $registrationResponse, $clientRegistrationState, $clientIdentifier, $serverIdentifier, $config)`
+- `[PSCustomObject] StartLogin($passw0rd)`
+- `[PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd)`
+- `[PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $clientIdentifier)`
+- `[PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $clientIdentifier, $serverIdentifier)`
+- `[PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $clientIdentifier, $serverIdentifier, $config)`
+
+### OPAQUE
+
+#### Properties
+
+- $type $Client
+- $type $Server
+
+#### Methods
+
+- `static [object] CreateRegistrationRequest($passw0rd)`
+- `static [string] GenerateRegistration($passw0rd, $serverSetup, $userIdentifier)`
+- `static [string] GenerateRegistration($passw0rd, $serverSetup, $userIdentifier, $clientIdentifier)`
+- `static [string] GenerateRegistration($passw0rd, $serverSetup, $userIdentifier, $clientIdentifier, $serverIdentifier)`
+- `static [string] GenerateRegistration($passw0rd, $serverSetup, $userIdentifier, $clientIdentifier, $serverIdentifier, $config)`
+- `static [PSCustomObject] StartLogin($passw0rd)`
+- `static [PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $serverSetup, $userIdentifier, $registrationRecord)`
+- `static [PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $serverSetup, $userIdentifier, $registrationRecord, $clientIdentifier)`
+- `static [PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $serverSetup, $userIdentifier, $registrationRecord, $clientIdentifier, $serverIdentifier)`
+- `static [PSCustomObject] FinishLogin($clientLoginState, $loginResponse, $passw0rd, $serverSetup, $userIdentifier, $registrationRecord, $clientIdentifier, $serverIdentifier, $config)`
+
+
+

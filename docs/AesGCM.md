@@ -57,3 +57,47 @@ finally {
 - **Key Reuse**: Never reuse a key/nonce pair. A nonce must be unique for every encryption with the same key.
 - **Nonce Size**: While AES-GCM supports different nonce sizes, 12 bytes (96 bits) is the standard and recommended size.
 - **Tag Size**: A 16-byte (128-bit) tag is recommended for maximum security.
+
+
+## API Documentation
+
+
+## Classes
+
+### AesGCM
+
+#### Methods
+
+- `static [byte[]] Encrypt($bytes)`
+- `static [byte[]] Encrypt($Bytes, $Password)`
+- `static [byte[]] Encrypt($Bytes, $Password, $Salt)`
+- `static [string] Encrypt($text, $Password, $iterations)`
+- `static [byte[]] Encrypt($Bytes, $Password, $iterations)`
+- `static [byte[]] Encrypt($Bytes, $Password, $Salt, $iterations)`
+- `static [byte[]] Encrypt($Bytes, $Password, $iterations, $Compression)`
+- `static [byte[]] Encrypt($Bytes, $Password, $Salt, $associatedData, $iterations)`
+- `static [byte[]] Encrypt($Bytes, $Password, $Salt, $associatedData)`
+- `static [byte[]] Encrypt($Bytes, $Password, $Salt, $associatedData, $Compression, $iterations)`
+- `static [void] Encrypt($File)`
+- `static [void] Encrypt($File, $Password)`
+- `static [void] Encrypt($File, $Password, $OutPath)`
+- `static [void] Encrypt($File, $Password, $OutPath, $iterations)`
+- `static [void] Encrypt($File, $Password, $OutPath, $iterations, $Compression)`
+- `static [byte[]] Decrypt($bytes)`
+- `static [byte[]] Decrypt($Bytes, $Password)`
+- `static [byte[]] Decrypt($Bytes, $Password, $Salt)`
+- `static [string] Decrypt($text, $Password, $iterations)`
+- `static [byte[]] Decrypt($Bytes, $Password, $iterations)`
+- `static [byte[]] Decrypt($Bytes, $Password, $Salt, $iterations)`
+- `static [byte[]] Decrypt($Bytes, $Password, $iterations, $Compression)`
+- `static [byte[]] Decrypt($Bytes, $Password, $Salt, $associatedData, $iterations)`
+- `static [byte[]] Decrypt($Bytes, $Password, $Salt, $associatedData)`
+- `static [byte[]] Decrypt($Bytes, $Password, $Salt, $associatedData, $Compression, $iterations)`
+- `static [void] Decrypt($File)`
+- `static [void] Decrypt($File, $password)`
+- `static [void] Decrypt($File, $Password, $OutPath)`
+- `static [void] Decrypt($File, $Password, $OutPath, $iterations)`
+- `static [void] Decrypt($File, $Password, $OutPath, $iterations, $Compression)`
+
+
+
