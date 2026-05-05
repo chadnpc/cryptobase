@@ -24,7 +24,6 @@ function ConvertTo-Armor {
     [Parameter(Position = 0)]
     [string]$HeaderType = 'PGP MESSAGE'
   )
-  
   begin {
     [System.Collections.Generic.List[byte]]$buffer = [System.Collections.Generic.List[byte]]::new()
   }
@@ -32,6 +31,6 @@ function ConvertTo-Armor {
     $buffer.AddRange($InputData)
   }
   end {
-    [Armor]::Encode($buffer.ToArray(), $HeaderType, @{})
+    return [Armor]::Encode($buffer.ToArray(), $HeaderType, @{})
   }
 }
