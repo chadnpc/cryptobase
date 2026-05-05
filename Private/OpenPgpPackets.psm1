@@ -4,7 +4,7 @@ using namespace System.Collections.Generic
 using namespace System.Text
 
 using module ./Utilities.psm1
-using module ./OpenPgpEnums.psm1
+using module ./Enums.psm1
 using module ./OpenPgpCore.psm1
 using module ./S2K.psm1
 
@@ -37,7 +37,8 @@ class PgpPublicKeyPacket {
       $material = [byte[]]::new($data.Length - 6)
       [Array]::Copy($data, 6, $material, 0, $material.Length)
       return [PgpPublicKeyPacket]::new($v, $ct, $alg, $material, $isSubkey)
-    } elseif ($v -eq 6) {
+    }
+    elseif ($v -eq 6) {
       if ($data.Length -lt 10) { throw [ArgumentException]::new("Data too short for V6 public key.") }
       $ts = ([long]$data[1] -shl 24) -bor ([long]$data[2] -shl 16) -bor ([long]$data[3] -shl 8) -bor [long]$data[4]
       $ct = [DateTimeOffset]::FromUnixTimeSeconds($ts)
@@ -47,7 +48,8 @@ class PgpPublicKeyPacket {
       $material = [byte[]]::new($keyLen)
       [Array]::Copy($data, 10, $material, 0, $keyLen)
       return [PgpPublicKeyPacket]::new($v, $ct, $alg, $material, $isSubkey)
-    } else {
+    }
+    else {
       throw [NotSupportedException]::new("Unsupported public key version: $v")
     }
   }
@@ -64,7 +66,8 @@ class PgpPublicKeyPacket {
       $res[4] = [byte]($ts -band 0xFF)
       $res[5] = [byte]$this.Algorithm
       [Array]::Copy($this.KeyMaterial, 0, $res, 6, $this.KeyMaterial.Length)
-    } elseif ($this.Version -eq 6) {
+    }
+    elseif ($this.Version -eq 6) {
       $res = [byte[]]::new(10 + $this.KeyMaterial.Length)
       $res[0] = $this.Version
       $ts = [uint32]$this.CreationTime.ToUnixTimeSeconds()
@@ -120,7 +123,8 @@ class PgpSecretKeyPacket {
       if ($alg -eq [PgpPublicKeyAlgorithm]::RsaEncryptOrSign -or $alg -eq [PgpPublicKeyAlgorithm]::RsaEncryptOnly -or $alg -eq [PgpPublicKeyAlgorithm]::RsaSignOnly) {
         [Mpi]::Read($data, $offset) # n
         [Mpi]::Read($data, $offset) # e
-      } else {
+      }
+      else {
         throw [NotSupportedException]::new("Parsing non-RSA V4 secret keys not yet implemented.")
       }
       
@@ -152,7 +156,8 @@ class PgpSecretKeyPacket {
       [Array]::Copy($data, $offset.Value, $secretMaterial, 0, $secretMaterialLen)
       
       return [PgpSecretKeyPacket]::new($pubKey, $usage, $cipher, $spec, $ivData, $secretMaterial)
-    } elseif ($v -eq 6) {
+    }
+    elseif ($v -eq 6) {
       # V6 is easier because public key length is in the header
       $ts = ([long]$data[1] -shl 24) -bor ([long]$data[2] -shl 16) -bor ([long]$data[3] -shl 8) -bor [long]$data[4]
       $ct = [DateTimeOffset]::FromUnixTimeSeconds($ts)
@@ -193,7 +198,8 @@ class PgpSecretKeyPacket {
       [Array]::Copy($data, $offset.Value, $secretMaterial, 0, $secretMaterialLen)
       
       return [PgpSecretKeyPacket]::new($pubKey, $usage, $cipher, $spec, $ivData, $secretMaterial)
-    } else {
+    }
+    else {
       throw [NotSupportedException]::new("Unsupported secret key version: $v")
     }
   }
@@ -220,10 +226,12 @@ class PgpSecretKeyPacket {
         $resList.AddRange($this.S2KSpecifier.Write())
         $resList.AddRange($this.IV)
       }
-    } else {
+    }
+    else {
       if ($this.S2KUsage -eq [PgpS2KUsage]::None) {
         $resList.Add(0)
-      } else {
+      }
+      else {
         $s2kData = [System.Collections.Generic.List[byte]]::new()
         $s2kData.Add([byte]$this.S2KUsage)
         $s2kData.Add($this.CipherAlgorithm)
