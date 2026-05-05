@@ -46,5 +46,5 @@
   )
 
   $exception = [System.Exception]::new($Message)
-  [System.Management.Automation.ErrorRecord]::new($exception, $ErrorID, $Category, $Target)
+  return [System.Management.Automation.ErrorRecord]::new($exception, $ErrorID, $Category, $Target)
 }
