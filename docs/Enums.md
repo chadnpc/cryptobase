@@ -5,39 +5,43 @@
 ## Enums
 
 ### EncryptionScope
-`powershell
+```powershell
 enum EncryptionScope {
   User
   Machine
 }
-``n
+```
+
 ### keyStoreMode
-`powershell
+```powershell
 enum keyStoreMode {
   Vault
   KeyFile
   SecureString
 }
-``n
+```
+
 ### KeyExportPolicy
-`powershell
+```powershell
 enum KeyExportPolicy {
   NonExportable
   ExportableEncrypted
   Exportable
 }
-``n
+```
+
 ### KeyProtection
-`powershell
+```powershell
 enum KeyProtection {
   None
   Protect
   ProtectHigh
   ProtectFingerPrint
 }
-``n
+```
+
 ### KeyUsage
-`powershell
+```powershell
 enum KeyUsage {
   None
   CRLSign
@@ -50,9 +54,10 @@ enum KeyUsage {
   DigitalSignature
   DecipherOnly
 }
-``n
+```
+
 ### X509ContentType
-`powershell
+```powershell
 enum X509ContentType {
   Unknown
   Cert
@@ -64,9 +69,10 @@ enum X509ContentType {
   Pkcs7
   Authenticode
 }
-``n
+```
+
 ### ECCurveName
-`powershell
+```powershell
 enum ECCurveName {
   ansix9p256r1
   ansix9p384r1
@@ -79,16 +85,18 @@ enum ECCurveName {
   nistP521
   secp256k1
 }
-``n
+```
+
 ### SdCategory
-`powershell
+```powershell
 enum SdCategory {
   Token
   Password
 }
-``n
+```
+
 ### ExpType
-`powershell
+```powershell
 enum ExpType {
   Milliseconds
   Years
@@ -98,18 +106,20 @@ enum ExpType {
   Minutes
   Seconds
 }
-``n
+```
+
 ### CertStoreName
-`powershell
+```powershell
 enum CertStoreName {
   MY
   ROOT
   TRUST
   CA
 }
-``n
+```
+
 ### CryptoAlgorithm
-`powershell
+```powershell
 enum CryptoAlgorithm {
   AesGCM
   ChaCha20
@@ -117,9 +127,10 @@ enum CryptoAlgorithm {
   RsaECDSA
   RsaOAEP
 }
-``n
+```
+
 ### RSAPadding
-`powershell
+```powershell
 enum RSAPadding {
   Pkcs1
   OaepSHA1
@@ -127,25 +138,28 @@ enum RSAPadding {
   OaepSHA384
   OaepSHA512
 }
-``n
+```
+
 ### Compression
-`powershell
+```powershell
 enum Compression {
   Gzip
   Deflate
   ZLib
 }
-``n
+```
+
 ### CredFlags
-`powershell
+```powershell
 enum CredFlags {
   None
   PromptNow
   UsernameTarget
 }
-``n
+```
+
 ### CredType
-`powershell
+```powershell
 enum CredType {
   Generic
   DomainPassword
@@ -156,26 +170,29 @@ enum CredType {
   Maximum
   MaximumEx
 }
-``n
+```
+
 ### CredentialPersistence
-`powershell
+```powershell
 enum CredentialPersistence {
   Session
   LocalComputer
   Enterprise
 }
-``n
+```
+
 ### HashType
-`powershell
+```powershell
 enum HashType {
   None
   SHA256
   SHA384
   SHA512
 }
-``n
+```
+
 ### S2KType
-`powershell
+```powershell
 enum S2KType {
   Simple
   Salted
@@ -183,9 +200,10 @@ enum S2KType {
   IteratedAndSalted
   Argon2
 }
-``n
+```
+
 ### AsymmetricAlgorithm
-`powershell
+```powershell
 enum AsymmetricAlgorithm {
   ED25519
   RSA
@@ -206,9 +224,10 @@ enum AsymmetricAlgorithm {
   SECP384R1
   SECP521R1
 }
-``n
+```
+
 ### KeyFormat
-`powershell
+```powershell
 enum KeyFormat {
   Raw
   Base64
@@ -218,9 +237,10 @@ enum KeyFormat {
   Pkcs12
   Xml
 }
-``n
+```
+
 ### KeySize
-`powershell
+```powershell
 enum KeySize {
   Low
   Medium
@@ -228,9 +248,10 @@ enum KeySize {
   VeryHigh
   Maximum
 }
-``n
+```
+
 ### ArmorType
-`powershell
+```powershell
 enum ArmorType {
   Message
   PublicKey
@@ -238,17 +259,19 @@ enum ArmorType {
   Signature
   SignedMessage
 }
-``n
+```
+
 ### MLKemSecurityLevel
-`powershell
+```powershell
 enum MLKemSecurityLevel {
   MLKem512
   MLKem768
   MLKem1024
 }
-``n
+```
+
 ### SlhDsaSecurityLevel
-`powershell
+```powershell
 enum SlhDsaSecurityLevel {
   SlhDsa128s
   SlhDsa128f
@@ -257,9 +280,10 @@ enum SlhDsaSecurityLevel {
   SlhDsa256s
   SlhDsa256f
 }
-``n
+```
+
 ### PgpHashAlgorithmId
-`powershell
+```powershell
 enum PgpHashAlgorithmId {
   Md5
   Sha1
@@ -271,9 +295,10 @@ enum PgpHashAlgorithmId {
   Sha3_256
   Sha3_512
 }
-``n
+```
+
 ### PgpPublicKeyAlgorithm
-`powershell
+```powershell
 enum PgpPublicKeyAlgorithm {
   RsaEncryptOrSign
   RsaEncryptOnly
@@ -293,9 +318,10 @@ enum PgpPublicKeyAlgorithm {
   Private101
   Private110
 }
-``n
+```
+
 ### PgpPacketTag
-`powershell
+```powershell
 enum PgpPacketTag {
   Reserved
   PublicKeyEncryptedSessionKey
@@ -322,27 +348,30 @@ enum PgpPacketTag {
   Private62
   Private63
 }
-``n
+```
+
 ### PgpS2KUsage
-`powershell
+```powershell
 enum PgpS2KUsage {
   None
   Aead
   Sha1Hash
   Checksum
 }
-``n
+```
+
 ### PgpCompressionAlgorithm
-`powershell
+```powershell
 enum PgpCompressionAlgorithm {
   Uncompressed
   Zip
   Zlib
   BZip2
 }
-``n
+```
+
 ### PgpSignatureType
-`powershell
+```powershell
 enum PgpSignatureType {
   BinaryDocument
   CanonicalTextDocument
@@ -360,9 +389,10 @@ enum PgpSignatureType {
   Timestamp
   ThirdPartyConfirmation
 }
-``n
+```
+
 ### PgpSignatureSubpacketType
-`powershell
+```powershell
 enum PgpSignatureSubpacketType {
   Reserved0
   Reserved1
@@ -395,42 +425,47 @@ enum PgpSignatureSubpacketType {
   IntendedRecipientFingerprint
   AttestationKeySignature
 }
-``n
+```
+
 ### PgpUserAttributeSubpacketType
-`powershell
+```powershell
 enum PgpUserAttributeSubpacketType {
   Image
   PrivateExperimental100
   PrivateExperimental101
   PrivateExperimental110
 }
-``n
+```
+
 ### PgpPacketFormat
-`powershell
+```powershell
 enum PgpPacketFormat {
   Old
   New
 }
-``n
+```
+
 ### PgpLiteralDataFormat
-`powershell
+```powershell
 enum PgpLiteralDataFormat {
   Binary
   Text
   Utf8
 }
-``n
+```
+
 ### PgpImageEncoding
-`powershell
+```powershell
 enum PgpImageEncoding {
   Jpeg
   PrivateExperimental100
   PrivateExperimental101
   PrivateExperimental110
 }
-``n
+```
+
 ### PgpRevocationReason
-`powershell
+```powershell
 enum PgpRevocationReason {
   NoReason
   KeySuperseded
@@ -438,5 +473,6 @@ enum PgpRevocationReason {
   KeyRetired
   UserIdNoLongerValid
 }
-``n
+```
+
 
