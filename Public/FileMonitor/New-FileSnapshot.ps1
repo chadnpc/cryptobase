@@ -12,12 +12,13 @@ function New-FileSnapshot {
   .EXAMPLE
   PS C:\> $snapshot = New-FileSnapshot -Path "C:\SecureApp"
   #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
   [CmdletBinding()]
   param(
     [Parameter(Mandatory, Position = 0)]
     [string]$Path
   )
   process {
-    [FileMonitor]::Snapshot($Path)
+    return [FileMonitor]::Snapshot($Path)
   }
 }
