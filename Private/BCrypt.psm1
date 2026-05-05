@@ -193,16 +193,14 @@ class BCryptCore {
     }
 
     [byte[]]$inputBytes = $null
-    switch ($hashType) {
+    $inputBytes = switch ($hashType) {
       ([HashType]::None) {
         $suffix = if ($bcryptMinorRevision -ge [char]'a') { [BCryptCore]::Nul } else { [BCryptCore]::EmptyString }
-        $inputBytes = [BCryptCore]::SafeUTF8.GetBytes($inputKey + $suffix)
+        [BCryptCore]::SafeUTF8.GetBytes($inputKey + $suffix); break
       }
       default {
-        if ($null -eq $enhancedHashKeyGen) {
-          throw [System.ArgumentException]::new("Invalid HashType, You can't have an enhanced hash without an implementation of the key generator.", "hashType")
-        }
-        $inputBytes = $enhancedHashKeyGen.InvokeReturnAsIs($inputKey, $hashType, $bcryptMinorRevision)
+        if ($null -eq $enhancedHashKeyGen) { throw [System.ArgumentException]::new("Invalid HashType, You can't have an enhanced hash without an implementation of the key generator.", "hashType") }
+        $enhancedHashKeyGen.InvokeReturnAsIs($inputKey, $hashType, $bcryptMinorRevision)
       }
     }
 
@@ -580,22 +578,25 @@ class BCryptExtendedV3 : BCryptCore {
 
     $sha = $null
     try {
-      switch ($hashType) {
+      $sha = switch ($hashType) {
         ([HashType]::SHA256) {
           # Try SHA3, fallback to SHA256 if .NET < 8
           $type = [Type]::GetType("System.Security.Cryptography.HMACSHA3_256")
-          if ($type) { $sha = [Activator]::CreateInstance($type, @(, $hmacKeyBytes)) }
-          else { $sha = [System.Security.Cryptography.HMACSHA256]::new($hmacKeyBytes) }
+          if ($type) { [Activator]::CreateInstance($type, @(, $hmacKeyBytes)) }
+          else { [System.Security.Cryptography.HMACSHA256]::new($hmacKeyBytes) }
+          break
         }
         ([HashType]::SHA384) {
           $type = [Type]::GetType("System.Security.Cryptography.HMACSHA3_384")
-          if ($type) { $sha = [Activator]::CreateInstance($type, @(, $hmacKeyBytes)) }
-          else { $sha = [System.Security.Cryptography.HMACSHA384]::new($hmacKeyBytes) }
+          if ($type) { [Activator]::CreateInstance($type, @(, $hmacKeyBytes)) }
+          else { [System.Security.Cryptography.HMACSHA384]::new($hmacKeyBytes) }
+          break
         }
         ([HashType]::SHA512) {
           $type = [Type]::GetType("System.Security.Cryptography.HMACSHA3_512")
-          if ($type) { $sha = [Activator]::CreateInstance($type, @(, $hmacKeyBytes)) }
-          else { $sha = [System.Security.Cryptography.HMACSHA512]::new($hmacKeyBytes) }
+          if ($type) { [Activator]::CreateInstance($type, @(, $hmacKeyBytes)) }
+          else { [System.Security.Cryptography.HMACSHA512]::new($hmacKeyBytes) }
+          break
         }
         default {
           throw [System.ArgumentOutOfRangeException]::new("hashType", $hashType, "Invalid HashType")
