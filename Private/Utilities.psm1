@@ -175,7 +175,7 @@ class SecureBox {
     }
 
     # Derive key using HKDF
-    $_key = [HKDF]::DeriveKey($Password, $Salt, [System.Text.Encoding]::UTF8.GetBytes("SecureBox"), 32)
+    $_key = [HkdfCore]::DeriveKey($Password, $Salt, [System.Text.Encoding]::UTF8.GetBytes("SecureBox"), 32)
 
     # Generate nonce
     $nonce = [byte[]]::new(12)
@@ -207,7 +207,7 @@ class SecureBox {
     [Array]::Copy($EncryptedData, 28, $Ciphertext, 0, $Ciphertext.Length)
 
     # Derive key
-    $_key = [HKDF]::DeriveKey($Password, $Salt, [System.Text.Encoding]::UTF8.GetBytes("SecureBox"), 32)
+    $_key = [HkdfCore]::DeriveKey($Password, $Salt, [System.Text.Encoding]::UTF8.GetBytes("SecureBox"), 32)
 
     # Decrypt
     return [ChaCha20Poly1305Managed]::Decrypt($_key, $Nonce, $Ciphertext)
