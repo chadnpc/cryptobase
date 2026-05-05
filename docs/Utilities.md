@@ -1,6 +1,19 @@
 # Utilities
 
-> **Note:** This documentation was automatically generated.
+Broad toolset of helper functions for byte array manipulation, zeroization, and constant-time comparisons.
+
+## Usage Example
+
+```powershell
+$secret1 = [byte[]](1,2,3)
+$secret2 = [byte[]](1,2,3)
+
+# Constant-time compare prevents timing side-channel attacks
+$isMatch = [CryptobaseUtils]::ConstantTimeEquals($secret1, $secret2)
+
+# Securely clear memory
+[CryptobaseUtils]::SecureClear($secret1)
+```
 
 ## Classes
 
@@ -203,5 +216,6 @@
 - `static [string] ProtectFile($Path, $OwnCertificate, $Contact, $OutPath, $PassThru)`
 - `static [string] ProtectContent($Content, $Name, $OwnCertificate, $Contact)`
 - `static [string] UnprotectDataset($JsonContent, $OutDirectory, $Cmdlet)`
+
 
 

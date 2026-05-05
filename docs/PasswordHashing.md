@@ -1,6 +1,18 @@
 # PasswordHashing
 
-> **Note:** This documentation was automatically generated.
+High-level utilities for securely hashing passwords for storage. Features modern algorithms like Argon2.
+
+## Usage Example
+
+```powershell
+$password = 'CorrectHorseBatteryStaple'
+
+# Hash the password
+$hash = [PasswordHashing]::HashPassword($password)
+
+# Verify the password later
+$isValid = [PasswordHashing]::VerifyPassword($password, $hash)
+```
 
 ## Classes
 
@@ -36,5 +48,6 @@
 - `[string] Hash($Password)`
 - `[bool] Verify($HashString, $Password)`
 - `static [byte[]] DeriveKey($Password, $Salt, $Cost, $BlockSize, $Parallelism, $KeyLength)`
+
 
 

@@ -1,6 +1,16 @@
 # Rabbit
 
-> **Note:** This documentation was automatically generated.
+An ultra-fast stream cipher known for exceptional software performance, selected as part of the eSTREAM portfolio.
+
+## Usage Example
+
+```powershell
+$key = [byte[]]::new(16); [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
+$iv = [byte[]]::new(8); [System.Security.Cryptography.RandomNumberGenerator]::Fill($iv)
+$plain = [System.Text.Encoding]::UTF8.GetBytes('Real-time data stream')
+
+$ciphertext = [RabbitManaged]::Encrypt($key, $iv, $plain)
+```
 
 ## Classes
 
@@ -30,5 +40,6 @@
 - `static hidden [uint] GFunc($x, $c)`
 - `static hidden [void] ExtractKeystream($state, $output)`
 - `static hidden [uint] RotateLeft($value, $bits)`
+
 
 

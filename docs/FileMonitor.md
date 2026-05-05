@@ -1,6 +1,16 @@
 # FileMonitor
 
-> **Note:** This documentation was automatically generated.
+Provides cryptographic monitoring of files to detect unauthorized modification using fast hashes like Blake3.
+
+## Usage Example
+
+```powershell
+# Take a snapshot of a directory
+$baseline = [FileMonitor]::Snapshot('C:\Sensitive')
+
+# Later, compare to detect changes
+$changes = [FileMonitor]::Diff('C:\Sensitive', $baseline)
+```
 
 ## Classes
 
@@ -23,5 +33,6 @@
 - `static [string] GetLogSummary($LogvariableName)`
 - `static [bool] IsFileOpenInVim($file)`
 - `static [bool] IsFileLocked($filePath)`
+
 
 

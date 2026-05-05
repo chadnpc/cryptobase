@@ -1,6 +1,19 @@
 # Armor
 
-> **Note:** This documentation was automatically generated.
+ASCII Armoring translates binary cryptographic data into readable ASCII formats (like OpenPGP or PEM).
+
+## Usage Example
+
+```powershell
+$data = [byte[]]::new(64); [System.Security.Cryptography.RandomNumberGenerator]::Fill($data)
+
+# Encode to OpenPGP ASCII Armor format
+$armored = [Armor]::Encode($data, 'PGP MESSAGE', @{})
+Write-Host $armored
+
+# Decode back to raw bytes
+$decoded = [Armor]::Decode($armored)
+```
 
 ## Classes
 
@@ -28,5 +41,6 @@
 - `static [ArmorDecodeResult] Decode($armoredText)`
 - `static hidden [string] GetArmorTypeName($type)`
 - `static hidden [ArmorType] ParseArmorType($typeName)`
+
 
 

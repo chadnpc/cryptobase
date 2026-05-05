@@ -1,6 +1,14 @@
 # EdwardsCurve
 
-> **Note:** This documentation was automatically generated.
+Core mathematics for Edwards elliptic curves, the framework behind Ed25519 and Ed448.
+
+## Usage Example
+
+```powershell
+# Mostly used internally to handle curve coordinate mathematics.
+# Represents points (X, Y, Z, T) in extended coordinates.
+$point = [EdwardsPoint]::new(...)
+```
 
 ## Classes
 
@@ -74,5 +82,6 @@
 - `static [byte[]] GetPublicKey($PrivateKey)`
 - `[byte[]] Sign($Message, $PrivateKey)`
 - `[bool] Verify($Signature, $Message, $PublicKey)`
+
 
 

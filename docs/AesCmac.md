@@ -1,6 +1,19 @@
 # AesCmac
 
-> **Note:** This documentation was automatically generated.
+AES Cipher-Based Message Authentication Code (CMAC). A block-cipher based message authentication code algorithm.
+
+## Usage Example
+
+```powershell
+$key = [byte[]]::new(32); [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
+$message = [System.Text.Encoding]::UTF8.GetBytes('Important data')
+
+# Generate MAC
+$mac = [AesCmac]::ComputeMac($key, $message)
+
+# Verify MAC
+$isValid = [AesCmac]::VerifyMac($key, $message, $mac)
+```
 
 ## Classes
 
@@ -18,5 +31,6 @@
 - `static hidden [void] ComputeCmac($tag, $data, $k1, $k2, $aes)`
 - `static hidden [void] LeftShiftOneBit($output, $input)`
 - `static hidden [void] XorBlock($a, $b)`
+
 
 

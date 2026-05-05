@@ -1,6 +1,19 @@
 # XOR
 
-> **Note:** This documentation was automatically generated.
+Simple bitwise XOR obfuscation. This is mathematically NOT secure and is meant for basic data obfuscation, not encryption.
+
+## Usage Example
+
+```powershell
+$data = [System.Text.Encoding]::UTF8.GetBytes('Hide this text')
+$key = [System.Text.Encoding]::UTF8.GetBytes('pad')
+
+# Obfuscate
+$obfuscated = [XOR]::Crypt($data, $key)
+
+# Deobfuscate (XOR is symmetric)
+$deobfuscated = [XOR]::Crypt($obfuscated, $key)
+```
 
 ## Classes
 
@@ -28,5 +41,6 @@
 - `static [byte[]] Decrypt($Bytes, $password, $iterations)`
 - `static [byte[]] Decrypt($Bytes, $xorkey, $iterations)`
 - `static hidden [byte[]] Get_ED($data, $Key, $IV, $Encrypt)`
+
 
 

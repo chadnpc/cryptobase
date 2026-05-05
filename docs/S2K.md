@@ -1,6 +1,16 @@
 # S2K
 
-> **Note:** This documentation was automatically generated.
+String-to-Key algorithms utilized predominantly by the OpenPGP standard to derive symmetric keys from passphrases.
+
+## Usage Example
+
+```powershell
+$passPhrase = [System.Text.Encoding]::UTF8.GetBytes('OpenPGP_Pass')
+$salt = [byte[]]::new(8); [System.Security.Cryptography.RandomNumberGenerator]::Fill($salt)
+
+# Derive 32-byte key via Iterated & Salted S2K (RFC 4880)
+$key = [S2K]::IteratedS2K($passPhrase, $salt, 65536, 32, [PgpHashAlgorithmId]::Sha256)
+```
 
 ## Classes
 
@@ -38,5 +48,6 @@
 - `static hidden [byte[]] DeriveIteratedKey($combined, $count, $keySize, $hashAlgorithmName)`
 - `static hidden [byte[]] HashData($data, $hashAlgorithmName)`
 - `static hidden [int] GetHashSize($hashAlgorithmName)`
+
 
 

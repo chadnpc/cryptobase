@@ -1,6 +1,20 @@
 # AesCCM
 
-> **Note:** This documentation was automatically generated.
+Advanced Encryption Standard in Counter with CBC-MAC (CCM) mode. It provides authenticated encryption (AEAD).
+
+## Usage Example
+
+```powershell
+$key = [byte[]]::new(32); [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
+$nonce = [byte[]]::new(12); [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
+$plain = [System.Text.Encoding]::UTF8.GetBytes('Secret Message')
+
+# Encrypt
+$ciphertext = [AesCCMManaged]::Encrypt($key, $nonce, $plain, $null)
+
+# Decrypt
+$decrypted = [AesCCMManaged]::Decrypt($key, $nonce, $ciphertext, $null)
+```
 
 ## Classes
 
@@ -69,5 +83,6 @@
 - `[byte[]] Decrypt($ciphertext)`
 - `[byte[]] GetNonce()`
 - `[void] Dispose()`
+
 
 

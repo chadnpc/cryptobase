@@ -1,6 +1,6 @@
 **Main class and cmdlet overview**
 
-The `[CryptoBase]` is the main class, it provides high-level convenience methods for common cryptographic tasks.
+The `[cryptobase]` is the main class, it provides high-level convenience methods for common cryptographic tasks.
 
 ## **CLI and Pipeline Usage**
 
@@ -39,18 +39,18 @@ $plainbytes = [System.Text.Encoding]::UTF8.GetBytes("Secret message")
 $password = "your-password"
 
 # Basic protection
-$protected = [CryptoBase]::ProtectData($plainbytes, $password)
+$protected = [cryptobase]::ProtectData($plainbytes, $password)
 
 # Protection with Additional Authenticated Data (AAD)
 $aad = [System.Text.Encoding]::UTF8.GetBytes("header-info")
-$protected = [CryptoBase]::ProtectData($plainbytes, $password, $aad)
+$protected = [cryptobase]::ProtectData($plainbytes, $password, $aad)
 ```
 
 ### UnprotectData
 Decrypts a protected payload.
 
 ```powershell
-$decrypted = [CryptoBase]::UnprotectData($protected, $password)
+$decrypted = [cryptobase]::UnprotectData($protected, $password)
 [System.Text.Encoding]::UTF8.GetString($decrypted) # "Secret message"
 ```
 
@@ -63,8 +63,8 @@ Paranoid cascade mode: **AES-256-GCM (inner)** wrapped by **XChaCha20-Poly1305 (
 $plainbytes = [System.Text.Encoding]::UTF8.GetBytes("Classified")
 $password = "correct horse battery staple"
 
-$cascade = [CryptoBase]::ProtectDataCascade($plainbytes, $password)
-$opened = [CryptoBase]::UnprotectDataCascade($cascade, $password)
+$cascade = [cryptobase]::ProtectDataCascade($plainbytes, $password)
+$opened = [cryptobase]::UnprotectDataCascade($cascade, $password)
 ```
 
 **CreateSealedBox**
@@ -75,7 +75,7 @@ $sender = [Curve25519]::GenerateKeyPair()
 $recipient = [Curve25519]::GenerateKeyPair()
 $msg = [System.Text.Encoding]::UTF8.GetBytes("sealed hello")
 
-$sealed = [CryptoBase]::CreateSealedBox($msg, $sender.PrivateKey, $recipient.PublicKey)
+$sealed = [cryptobase]::CreateSealedBox($msg, $sender.PrivateKey, $recipient.PublicKey)
 ```
 
 **ProtectDataQuantumHybrid**
@@ -87,7 +87,7 @@ $mlKem = [MLKemCore]::new()
 $recipientKem = $mlKem.GenerateKeyPair()
 $payload = [System.Text.Encoding]::UTF8.GetBytes("future-proof payload")
 
-$result = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientP256.PublicKey, $recipientKem.PublicKey)
+$result = [cryptobase]::ProtectDataQuantumHybrid($payload, $recipientP256.PublicKey, $recipientKem.PublicKey)
 $result.Ciphertext
 $result.EphemeralCurvePub
 $result.KemCiphertext
@@ -102,7 +102,7 @@ Generates a new keypair and signs the data.
 
 ```powershell
 $data = [System.Text.Encoding]::UTF8.GetBytes("Message to sign")
-$result = [CryptoBase]::SignMessage($data)
+$result = [cryptobase]::SignMessage($data)
 
 $result.Signature  # The signature bytes
 $result.PublicKey  # The generated public key
@@ -113,7 +113,7 @@ $result.PrivateKey # The generated private key
 Verifies a signature against a public key.
 
 ```powershell
-$isValid = [CryptoBase]::VerifyMessage($data, $signature, $publicKey)
+$isValid = [cryptobase]::VerifyMessage($data, $signature, $publicKey)
 ```
 
 ## File Obfuscation
@@ -122,12 +122,12 @@ Provides simple file-level encryption with integrity checking using **CRC24**.
 
 ### ObfuscateFile
 ```powershell
-[CryptoBase]::ObfuscateFile("source.txt", "source.enc", $password)
+[cryptobase]::ObfuscateFile("source.txt", "source.enc", $password)
 ```
 
 ### DeobfuscateFile
 ```powershell
-[CryptoBase]::DeobfuscateFile("source.enc", "decrypted.txt", $password)
+[cryptobase]::DeobfuscateFile("source.enc", "decrypted.txt", $password)
 ```
 
 ## Secure String Handling
@@ -137,11 +137,43 @@ Utilities for working with `System.Security.SecureString`.
 ### SecureStringToString
 Safely converts a `SecureString` to a plain string in memory (use with caution).
 ```powershell
-$plain = [CryptoBase]::SecureStringToString($secureString)
+$plain = [cryptobase]::SecureStringToString($secureString)
 ```
 
 ### ReadSecureString
 Prompts the user for a password and returns the plain string.
 ```powershell
-$pass = [CryptoBase]::ReadSecureString()
+$pass = [cryptobase]::ReadSecureString()
+```
+
+## Pipeline & Stream Operations
+
+Since the `cryptobase` cmdlet supports pipeline unrolling and binary streams, you can build complex cryptographic processing chains entirely in the command line without creating intermediate files.
+
+### Encrypt, Encode, and Obfuscate Pipeline
+
+Encrypt a string, convert to Base64, and output to a stream.
+```powershell
+# In a single pipeline string -> bytes -> AesGCM -> Base64 string
+"Secret Data" | cryptobase ProtectData | ConvertTo-Base64
+```
+
+### Decrypt an Armored Payload
+
+```powershell
+# Assume encoded.txt contains an ASCII armored AES-encrypted payload
+Get-Content encoded.txt -Raw | Decode-Armor | cryptobase UnprotectData > plaintext.bin
+```
+
+### High-level Certificate and Key Automation
+
+You can also leverage the core types for rapid development of PKI logic.
+```powershell
+# Rapid generation and signing with ephemeral keys
+$pqc = [cryptobase]::ProtectDataQuantumHybrid($data, $receiverP256, $receiverKem)
+
+# Verify the resulting Hybrid object
+$pqc.Ciphertext
+$pqc.EphemeralCurvePub
+$pqc.KemCiphertext
 ```

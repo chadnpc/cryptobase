@@ -1,11 +1,11 @@
 # cryptobase module docs
 
-This document serves as the master index for all features available in the `cryptobase` module. 
+This document serves as the master index for all features available in the `cryptobase` module.
 Every cryptographic class, module, and utility is documented below.
 
 ## 🛠️ High-Level Protocols & Utilities
 The best place to start. Easy-to-use wrappers for common security operations.
-- **[CryptoBase Convenience](./CryptoBase.md)**: Wrapper for everyday data protection and signing.
+- **[cryptobase](./CryptoBase.md)**: Wrapper for everyday data protection and signing.
 - **[Credentials](./Credentials.md)**: Windows Credential Manager abstractions.
 - **[Vault](./Vault.md)**: Secure cross-platform secret storage handling.
 - **[OpenPgp](./OpenPgp.md)** & **[Armor](./Armor.md)**: ASCII armoring and OpenPGP packet processing for binary data.
@@ -57,9 +57,7 @@ Integrity checks, message digests, and message authentication codes.
 - **[AesCmac](./AesCmac.md)**: Cipher-based Message Authentication Code.
 - **[KMACAuth](./KMACAuth.md)**: Keccak Message Authentication Code.
 
-## 🧰 Core & Enums
+## 🧰 internals
 Data models and shared internals.
 - **[Utilities](./Utilities.md)**: Foundational bitwise logic and helper scripts.
 - **[Models](./Models.md)**: Structured classes and DTOs.
-- **[Enums](./Enums.md)**: Global enumerations like `CryptoAlgorithm` and `HashType`.
-- **[Exceptions](./Exceptions.md)**: Cryptographic exceptions handled by the module.

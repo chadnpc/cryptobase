@@ -1,6 +1,16 @@
 # Vault
 
-> **Note:** This documentation was automatically generated.
+Provides high-level cross-platform API for securely persisting and retrieving secrets directly from the OS credential store.
+
+## Usage Example
+
+```powershell
+# Save secret
+[Vault]::SetSecret('API_KEY', 'my-super-secret-123')
+
+# Retrieve secret
+$secretStr = [Vault]::GetSecret('API_KEY')
+```
 
 ## Classes
 
@@ -34,5 +44,6 @@
 - `[void] SetVaultPolicy($name, $rules)`
 - `[void] RemoveVaultPolicy($name)`
 - `[string[]] GetVaultPolicyList()`
+
 
 

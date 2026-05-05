@@ -1,6 +1,16 @@
 # KeypairGen
 
-> **Note:** This documentation was automatically generated.
+Convenience classes for generating, formatting, and converting asymmetric keys.
+
+## Usage Example
+
+```powershell
+$rsaKeys = [KeypairGen]::GenerateRSA(2048)
+$edKeys = [KeypairGen]::GenerateEd25519()
+
+# Write PEM format to disk
+[System.IO.File]::WriteAllText('pub.pem', $rsaKeys.PublicKeyPem)
+```
 
 ## Classes
 
@@ -122,5 +132,6 @@
 - `[Keypair[]] GetAllByAlgorithm($algorithm)`
 - `[void] Save($path)`
 - `[void] Load($path)`
+
 
 

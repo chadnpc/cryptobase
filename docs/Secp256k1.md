@@ -1,6 +1,19 @@
 # Secp256k1
 
-> **Note:** This documentation was automatically generated.
+The Koblitz elliptic curve used primarily in Bitcoin and various blockchain environments for digital signatures.
+
+## Usage Example
+
+```powershell
+$msg = [System.Text.Encoding]::UTF8.GetBytes('Blockchain Transaction')
+
+# Generate signature
+$keypair = [Secp256k1Key]::Generate()
+$sig = [Secp256k1]::Sign($msg, $keypair.PrivateKey)
+
+# Verify
+$valid = [Secp256k1]::Verify($msg, $sig, $keypair.PublicKey)
+```
 
 ## Classes
 
@@ -24,5 +37,6 @@
 
 - `[void] Secp256k1SignResult()`
 - `[void] Secp256k1SignResult($signature, $privateKey, $publicKey)`
+
 
 

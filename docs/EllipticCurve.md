@@ -1,6 +1,13 @@
 # EllipticCurve
 
-> **Note:** This documentation was automatically generated.
+Core mathematics for standard elliptic curves like Secp256k1 and NIST curves.
+
+## Usage Example
+
+```powershell
+# Mostly used internally by the module for signature/DH calculation.
+# Represents coordinates on a defined curve equation.
+```
 
 ## Classes
 
@@ -19,5 +26,6 @@
 - `[byte[]] GenerateKey()`
 - `[string] ExportKeyPair($file)`
 - `[void] ImportKeyPair($filePath, $keyPairXml)`
+
 
 

@@ -1,6 +1,19 @@
 # Hkdf
 
-> **Note:** This documentation was automatically generated.
+HMAC-based Extract-and-Expand Key Derivation Function (RFC 5869). Used to derive multiple keys from a single master secret.
+
+## Usage Example
+
+```powershell
+$ikm = [System.Text.Encoding]::UTF8.GetBytes('MasterSecretData')
+$salt = [System.Text.Encoding]::UTF8.GetBytes('RandomSalt')
+
+# Extract PRK
+$prk = [HkdfCore]::Extract($salt, $ikm, 'SHA256')
+
+# Expand to required key length (e.g. 32 bytes for AES-256)
+$key = [HkdfCore]::Expand($prk, [System.Text.Encoding]::UTF8.GetBytes('EncryptionKey'), 32, 'SHA256')
+```
 
 ## Classes
 
@@ -50,5 +63,6 @@
 - `hidden [void] ClearSalt()`
 - `hidden [void] ClearInfo()`
 - `[void] Dispose()`
+
 
 

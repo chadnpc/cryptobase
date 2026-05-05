@@ -1,6 +1,13 @@
 # MD5
 
-> **Note:** This documentation was automatically generated.
+Legacy MD5 hashing algorithm. Included for backwards compatibility or checksumming non-sensitive data. NOT secure for cryptography.
+
+## Usage Example
+
+```powershell
+$data = [System.Text.Encoding]::UTF8.GetBytes('legacy')
+$hash = [MD5]::HashData($data)
+```
 
 ## Classes
 
@@ -11,5 +18,6 @@
 - `[void] MD5()`
 - `static [byte[]] Encrypt($data, $hash)`
 - `static [byte[]] Decrypt($data, $hash)`
+
 
 
