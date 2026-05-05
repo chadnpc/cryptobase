@@ -90,7 +90,7 @@ For a complete list of classes and their usage, see:
 
 - **[Usage docs](./docs/README.md)**: Categorized list of all major primitives.
 - **[OPAQUE Protocol](./docs/Opaque.md)**: Detailed guide for secure password authentication.
-- **[Main class](./docs/CryptoBase.md)**: Main class and cmdlet overview.
+- **[More about the main class](./docs/CryptoBase.md)** and cmdlet overview.
 
 
 **⚖️ License**
