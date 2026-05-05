@@ -12,6 +12,7 @@ function New-PasswordHash {
   .EXAMPLE
   PS C:\> $hash = New-PasswordHash -Password "SuperSecret123!"
   #>
+  [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
   [CmdletBinding()]
   [OutputType([string])]
   param(
@@ -19,6 +20,6 @@ function New-PasswordHash {
     [string]$Password
   )
   process {
-    [PasswordHashing]::HashPassword($Password)
+    return [PasswordHashing]::HashPassword($Password)
   }
 }
