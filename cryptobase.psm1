@@ -354,6 +354,9 @@ EXAMPLES
   }
 
   static [void] ObfuscateFile([string]$inputPath, [string]$outputPath, [securestring]$password) {
+    $inputPath = [CryptoBase]::ResolvePath($inputPath)
+    $outputPath = [CryptoBase]::ResolvePath($outputPath)
+    if (![File]::Exists($inputPath)) { throw [FileNotFoundException]::new("Input file not found: $inputPath") }
     $data = [File]::ReadAllBytes($inputPath)
     $wrapped = [CryptoBase]::ProtectData($data, $password)
     $fileCrc = [Crc24]::ComputeToBytes($wrapped)
@@ -369,6 +372,9 @@ EXAMPLES
   }
 
   static [void] DeobfuscateFile([string]$inputPath, [string]$outputPath, [securestring]$password) {
+    $inputPath = [CryptoBase]::ResolvePath($inputPath)
+    $outputPath = [CryptoBase]::ResolvePath($outputPath)
+    if (![File]::Exists($inputPath)) { throw [FileNotFoundException]::new("Input file not found: $inputPath") }
     $blob = [File]::ReadAllBytes($inputPath)
     if ($blob.Length -lt 4) { throw [ArgumentException]::new("Invalid obfuscated file.") }
     $crc = $blob[0..2]
@@ -397,6 +403,17 @@ EXAMPLES
       $ss.Dispose()
     }
     return $result
+  }
+  static [string] ResolvePath([string]$path) {
+    if ([string]::IsNullOrWhiteSpace($path)) { return $path }
+    if ([Path]::IsPathRooted($path)) { return $path }
+    try {
+      $currentPath = (Get-Location).Path
+      return [Path]::GetFullPath([Path]::Combine($currentPath, $path))
+    }
+    catch {
+      return [Path]::GetFullPath($path)
+    }
   }
 }
 
