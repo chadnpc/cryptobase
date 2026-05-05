@@ -474,14 +474,14 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   #region AesCCM Tests
   Context "AES-CCM AEAD" {
     It "AesCCM should encrypt and decrypt" {
-      $aesCcm = [AesCCM]::new()
+      $aesCcm = [AesCCMCore]::new()
       $encrypted = $aesCcm.Encrypt($testData)
       $decrypted = $aesCcm.Decrypt($encrypted)
       $decrypted | Should Be $testData
     }
 
     It "AesCCM should reject tampered ciphertext" {
-      $aesCcm = [AesCCM]::new()
+      $aesCcm = [AesCCMCore]::new()
       $encrypted = $aesCcm.Encrypt($testData)
       $tampered = $encrypted.Clone()
       $tampered[0] = ($tampered[0] + 1) % 256
