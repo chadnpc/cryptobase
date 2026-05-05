@@ -37,18 +37,31 @@ function New-CryptoKeyPair {
   process {
     $result = $null
     # Simple delegation based on most common standard usages
-    if ($Algorithm -eq [AsymmetricAlgorithm]::ED25519) {
-      $result = [KeypairGen]::GenerateEd25519($Format)
-    } elseif ($Algorithm -eq [AsymmetricAlgorithm]::RSA) {
-      $result = [KeypairGen]::GenerateRSA($Size, $Format)
-    } elseif ($Algorithm -eq [AsymmetricAlgorithm]::ECDSA) {
-      $result = [KeypairGen]::GenerateEcdsa([ECCurveName]::$Size, $Format) # Assuming bit size map to curve, though simplistic in cmdlet logic
-    } elseif ($Algorithm -eq [AsymmetricAlgorithm]::MLKem -or $Algorithm -eq [AsymmetricAlgorithm]::KYBER) {
-      $result = [KeypairGen]::GenerateMLKem([MLKemSecurityLevel]::MLKem768, $Format)
-    } else {
-      # Fallback logic to generic manager
-      $result = [KeypairGen]::GenerateRSA($Size, $Format)
-      Write-Warning "Fallback to RSA. Algorithm $Algorithm specific wrapper not fully exposed in pipeline wrapper yet."
+    $result = switch ($Algorithm) {
+      [AsymmetricAlgorithm]::Ed25519 {
+        [KeypairGen]::GenerateEd25519($Format)
+        break
+      }
+      [AsymmetricAlgorithm]::RSA {
+        [KeypairGen]::GenerateRSA($Size, $Format)
+        break
+      }
+      [AsymmetricAlgorithm]::ECDSA {
+        [KeypairGen]::GenerateEcdsa([ECCurveName]::$Size, $Format) # Assuming bit size map to curve, though simplistic in cmdlet logic
+        break
+      }
+      [AsymmetricAlgorithm]::MLKem {
+        [KeypairGen]::GenerateMLKem([MLKemSecurityLevel]::MLKem768, $Format)
+        break
+      }
+      [AsymmetricAlgorithm]::KYBER {
+        [KeypairGen]::GenerateMLKem([MLKemSecurityLevel]::MLKem768, $Format)
+        break
+      }
+      default {
+        [KeypairGen]::GenerateRSA($Size, $Format)
+        Write-Warning "Fallback to RSA. Algorithm $Algorithm specific wrapper not fully exposed in pipeline wrapper yet."
+      }
     }
 
     if ($ExportPath) {
@@ -57,12 +70,12 @@ function New-CryptoKeyPair {
       if ($Format -eq [KeyFormat]::Pem) {
         [System.IO.File]::WriteAllText($pubPath, $result.PublicKeyPem)
         [System.IO.File]::WriteAllText($privPath, $result.PrivateKeyPem)
-      } else {
+      }
+      else {
         [System.IO.File]::WriteAllBytes($pubPath, $result.PublicKeyRaw)
         [System.IO.File]::WriteAllBytes($privPath, $result.PrivateKeyRaw)
       }
     }
-
     return $result
   }
 }
