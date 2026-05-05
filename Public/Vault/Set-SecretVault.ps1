@@ -15,6 +15,7 @@ function Set-SecretVault {
   .EXAMPLE
   PS C:\> Set-SecretVault -Key "API_KEY" -Secret "xyz123"
   #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
   [CmdletBinding()]
   param(
     [Parameter(Mandatory, Position = 0)]
