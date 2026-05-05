@@ -1195,4 +1195,137 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       ($decoded -join ',') | Should Be ($script:testDataShort -join ',')
     }
   }
-}
+  #region OpenPGP Tests
+  Context "OpenPGP - Cryptographic Primitives" {
+    It "Mpi should encode and decode small value (5)" {
+      $val = [System.Numerics.BigInteger]::new(5)
+      $encoded = [Mpi]::Write($val)
+      # 00 03 05
+      $encoded.Length | Should Be 3
+      $encoded[0] | Should Be 0
+      $encoded[1] | Should Be 3
+      $encoded[2] | Should Be 5
+      
+      $offset = [ref]0
+      $decoded = [Mpi]::Read($encoded, $offset)
+      $decoded | Should Be $val
+      $offset.Value | Should Be 3
+    }
+
+    It "Mpi should encode and decode large value (2048-bit)" {
+      $bytes = [byte[]]::new(256)
+      [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+      $bytes[0] = $bytes[0] -bor 0x80 # Ensure MSB set
+      # BigInteger constructor expects little-endian for positive if not using unsigned flag
+      # But our MPI is big-endian.
+      [Array]::Reverse($bytes)
+      if (($bytes[$bytes.Length - 1] -band 0x80) -ne 0) {
+        $unsigned = [byte[]]::new(257)
+        [Array]::Copy($bytes, $unsigned, 256)
+        $val = [System.Numerics.BigInteger]::new($unsigned)
+      } else {
+        $val = [System.Numerics.BigInteger]::new($bytes)
+      }
+      
+      $encoded = [Mpi]::Write($val)
+      $encoded.Length | Should Be (2 + 256)
+      
+      $offset = [ref]0
+      $decoded = [Mpi]::Read($encoded, $offset)
+      $decoded | Should Be $val
+    }
+
+    It "PgpPacketHeader should parse New format length (1-byte)" {
+      $data = [byte[]](203, 5) # Tag 11 (Literal Data), Length 5
+      $header = [PgpPacketHeader]::Read($data, 0)
+      $header.Tag.ToString() | Should Be "LiteralData"
+      $header.Format.ToString() | Should Be "New"
+      $header.Length | Should Be 5
+      $header.HeaderLength | Should Be 2
+    }
+
+    It "PgpPacketHeader should parse Old format length (2-byte)" {
+      # 10 (bit 7,6) + 11 (Tag 11) << 2 + 1 (2-byte length type)
+      # 1010 1101 = 0xAD
+      $data = [byte[]](0xAD, 0x01, 0x00) # Length 256
+      $header = [PgpPacketHeader]::Read($data, 0)
+      $header.Tag.ToString() | Should Be "LiteralData"
+      $header.Format.ToString() | Should Be "Old"
+      $header.Length | Should Be 256
+      $header.HeaderLength | Should Be 3
+    }
+
+    It "PgpUserIdPacket should round-trip" {
+      $userId = "Antigravity <anti@gravity.ai>"
+      $packet = [PgpUserIdPacket]::new($userId)
+      $encoded = $packet.ToArray()
+      $decoded = [PgpUserIdPacket]::Read($encoded)
+      $decoded.UserId | Should Be $userId
+    }
+
+    It "PgpLiteralDataPacket should round-trip" {
+      $content = [System.Text.Encoding]::UTF8.GetBytes("Hello OpenPGP")
+      $date = [DateTimeOffset]::FromUnixTimeSeconds(1234567890)
+      $packet = [PgpLiteralDataPacket]::new([PgpLiteralDataFormat]::Utf8, "test.txt", $date, $content)
+      
+      $encoded = $packet.ToArray()
+      $decoded = [PgpLiteralDataPacket]::Read($encoded)
+      
+      $decoded.Format.ToString() | Should Be "Utf8"
+      $decoded.FileName | Should Be "test.txt"
+      $decoded.Date.ToUnixTimeSeconds() | Should Be 1234567890
+      ($decoded.Data -join ',') | Should Be ($content -join ',')
+    }
+
+    It "PgpS2KSpecifier should round-trip Simple" {
+      $spec = [PgpS2KSpecifier]::new()
+      $spec.Type = [S2KType]::Simple
+      $spec.HashAlgorithm = [PgpHashAlgorithmId]::Sha256
+      
+      $encoded = $spec.Write()
+      $offset = [ref]0
+      $decoded = [PgpS2KSpecifier]::Read($encoded, $offset)
+      
+      [int]$decoded.Type | Should Be 0
+      [int]$decoded.HashAlgorithm | Should Be 8
+    }
+
+    It "PgpS2KSpecifier should round-trip Argon2" {
+      $spec = [PgpS2KSpecifier]::new()
+      $spec.Type = [S2KType]::Argon2
+      $spec.HashAlgorithm = [PgpHashAlgorithmId]::Sha256
+      $spec.Salt = [byte[]]@(1..16)
+      $spec.Argon2MemoryExponent = 16
+      $spec.Argon2Passes = 3
+      $spec.Argon2Parallelism = 4
+      
+      $encoded = $spec.Write()
+      $offset = [ref]0
+      $decoded = [PgpS2KSpecifier]::Read($encoded, $offset)
+      
+      [int]$decoded.Type | Should Be 4
+      ($decoded.Salt -join ',') | Should Be ($spec.Salt -join ',')
+      $decoded.Argon2MemoryExponent | Should Be 16
+    }
+
+    It "PgpPublicKeyPacket (V4 RSA) should round-trip" {
+      $n = [System.Numerics.BigInteger]::Parse("65537") # Tiny for test
+      $e = [System.Numerics.BigInteger]::new(3)
+      $nEncoded = [Mpi]::Write($n)
+      $eEncoded = [Mpi]::Write($e)
+      $material = $nEncoded + $eEncoded
+      
+      $date = [DateTimeOffset]::FromUnixTimeSeconds(1600000000)
+      $packet = [PgpPublicKeyPacket]::new(4, $date, [PgpPublicKeyAlgorithm]::RsaEncryptOrSign, $material, $false)
+      
+      $encoded = $packet.ToArray()
+      $decoded = [PgpPublicKeyPacket]::Read($encoded, $false)
+      
+      $decoded.Version | Should Be 4
+      $decoded.Algorithm.ToString() | Should Be "RsaEncryptOrSign"
+      $decoded.CreationTime.ToUnixTimeSeconds() | Should Be 1600000000
+      ($decoded.KeyMaterial -join ',') | Should Be ($material -join ',')
+    }
+  }
+  #endregion
+}
