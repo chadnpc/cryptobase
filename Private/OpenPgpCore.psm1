@@ -5,7 +5,7 @@ using namespace System.Numerics
 using namespace System.Text
 
 using module ./Utilities.psm1
-using module ./OpenPgpEnums.psm1
+using module ./Enums.psm1
 
 class Mpi {
   static [BigInteger] Read([byte[]]$data, [ref]$offset) {
@@ -95,24 +95,29 @@ class PgpPacketHeader {
       $header.Length = $lenInfo.Length
       $header.IsPartial = $lenInfo.IsPartial
       $header.HeaderLength = 1 + $lenInfo.BytesConsumed
-    } else {
+    }
+    else {
       $header.Tag = [PgpPacketTag](($headerByte -band 0x3C) -shr 2)
       $lenType = $headerByte -band 0x03
       
       switch ($lenType) {
-        0 { # 1-byte length
+        0 {
+          # 1-byte length
           $header.Length = [long]$data[$offset + 1]
           $header.HeaderLength = 2
         }
-        1 { # 2-byte length
+        1 {
+          # 2-byte length
           $header.Length = ([long]$data[$offset + 1] -shl 8) -bor [long]$data[$offset + 2]
           $header.HeaderLength = 3
         }
-        2 { # 4-byte length
+        2 {
+          # 4-byte length
           $header.Length = ([long]$data[$offset + 1] -shl 24) -bor ([long]$data[$offset + 2] -shl 16) -bor ([long]$data[$offset + 3] -shl 8) -bor [long]$data[$offset + 4]
           $header.HeaderLength = 5
         }
-        3 { # Indeterminate length
+        3 {
+          # Indeterminate length
           $header.Length = -1
           $header.HeaderLength = 1
         }
