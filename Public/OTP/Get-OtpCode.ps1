@@ -20,6 +20,6 @@ function Get-OtpCode {
     [string]$Secret
   )
   process {
-    return [OTPKIT]::GetTootCodepCode($Secret)
+    return [OTPKIT]::GetOtp($Secret)
   }
 }
