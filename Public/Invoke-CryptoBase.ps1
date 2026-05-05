@@ -39,39 +39,29 @@ function Invoke-CryptoBase {
     $InputObject
   )
   begin {
-    $crypt = [CryptoBase]::new(); $res = $null
-    $methodName = [string]::IsNullOrWhiteSpace($Method) ? "GetHelp" : $Method
-
-    # Validate method exists
-    if ($methodName -notin [CryptoBase]::Methods.Name) {
-      $PSCmdlet.ThrowTerminatingError([System.Management.Automation.ErrorRecord]::new(
-          [System.InvalidOperationException]::new("Method '$methodName' was not found in CryptoBase."),
-          "METHOD_NOT_FOUND",
-          "InvalidArgument",
-          $null
-        )
-      )
+    $buff = [System.Collections.Generic.List[byte]]::new()
+    $meth = [string]::IsNullOrWhiteSpace($Method) ? "GetHelp" : $Method
+    if ($meth -notin [CryptoBase]::Methods.Name) {
+      throw "Method '$meth' not found in CryptoBase."
     }
   }
   process {
-    if ($PSBoundParameters.ContainsKey("InputObject")) {
-      if ($InputObject -is [byte]) {
-        $buffer = [System.Collections.Generic.List[byte]]::new()
-        $buffer.Add($InputObject)
-        # Accumulate unrolled bytes from pipeline
-        $res = $crypt::$methodName(@(, $buffer.ToArray()))
-      }
+    if ($PSBoundParameters.ContainsKey('InputObject')) {
+      if ($InputObject -is [byte]) { [void]$buff.Add($InputObject) }
       else {
-        # Process other types (strings, paths, or already-rolled byte[]) immediately
-        $res = $crypt::$methodName($InputObject)
+        $r = [CryptoBase]::$meth($InputObject)
+        if ($null -ne $r) { Write-Output -NoEnumerate -InputObject $r }
       }
-    }
-    else {
-      # No parameter input: execute method without arguments (e.g., GetHelp)
-      $res = $crypt::$methodName()
     }
   }
   end {
-    return $res
+    if ($buff.Count -gt 0) {
+      $r = [CryptoBase]::$meth($buff.ToArray())
+      if ($null -ne $r) { Write-Output -NoEnumerate -InputObject $r }
+    }
+    elseif (!$PSBoundParameters.ContainsKey('InputObject')) {
+      $r = [CryptoBase]::$meth()
+      if ($null -ne $r) { Write-Output $r }
+    }
   }
 }
