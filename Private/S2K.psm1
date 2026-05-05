@@ -28,11 +28,11 @@ class PgpS2KSpecifier {
 
   static [PgpS2KSpecifier] Read([byte[]]$data, [ref]$offset) {
     if ($data.Length -lt $offset.Value + 2) { throw [ArgumentException]::new("Data too short for S2K specifier.") }
-    
+
     $spec = [PgpS2KSpecifier]::new()
     $spec.Type = [S2KType]$data[$offset.Value]
     $spec.HashAlgorithm = [PgpHashAlgorithmId]$data[$offset.Value + 1]
-    
+
     switch ($spec.Type) {
       ([S2KType]::Simple) {
         $offset.Value += 2
