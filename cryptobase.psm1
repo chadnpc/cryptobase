@@ -18,6 +18,7 @@ using namespace System.Collections.ObjectModel
 
 using module Private/Enums.psm1
 using module Private/Exceptions.psm1
+using module Private/Hkdf.psm1
 using module Private/Utilities.psm1
 using module Private/Models.psm1
 using module Private/AesCCM.psm1
@@ -41,7 +42,6 @@ using module Private/EllipticCurve.psm1
 using module Private/FileMonitor.psm1
 using module Private/Hc128.psm1
 using module Private/Hc256.psm1
-using module Private/Hkdf.psm1
 using module Private/KeypairGen.psm1
 using module Private/KMACAuth.psm1
 using module Private/MD5.psm1
@@ -408,7 +408,7 @@ $typestoExport = @(
   [AesCcmCore], [AesCcmBuilder], [AesCcmEncryptionResult], [AesCfb], [AesCmac], [AesCng], [AesCtr], [AesGCM], [AesOcbCore], [AesOcb], [AesSIV], [ArmorDecodeResult], [Armor], [BCryptCore], [BCrypt], [BCryptExtendedV3], [Blake2b], [ChaCha20Poly1305Managed], [Crc24], [CredManaged], [NativeCredential], [CredentialManager], [Curve25519], [Ecdsa], [Ed25519Impl], [Ed25519], [Ed448], [ECC],
   [EncryptionScope], [keyStoreMode], [KeyExportPolicy], [KeyProtection], [KeyUsage], [X509ContentType], [ECCurveName], [SdCategory], [ExpType], [CertStoreName], [CryptoAlgorithm], [RSAPadding], [Compression], [CredFlags], [CredType], [CredentialPersistence], [HashType], [AsymmetricAlgorithm], [KeyFormat], [KeySize], [ArmorType],
   [MLKemSecurityLevel], [SlhDsaSecurityLevel], [InvalidArgumentException], [CredentialNotFoundException], [IntegrityCheckFailedException], [InvalidPasswordException], [SaltParseException], [BcryptAuthenticationException], [HashInformationException], [KeypairException], [KeyGenerationException], [KeyImportException], [FileMonitor],
-  [Hc128], [Hc256], [HkdfCore], [Keypair], [NamedKeypair], [KeypairGenerationResult], [KeypairHelper], [KeypairGen], [KeypairManager], [KMAC256], [MD5], [Expiration], [HashParser], [HashInformation], [HashFormatDescriptor], [CipherObject], [SecretStore], [KSFConfigType], [opaqueServerLoginState], [opaqueClientRegistrationState],
+  [Hc128], [Hc256], [HkdfCore], [HkdfBuilder], [Keypair], [NamedKeypair], [KeypairGenerationResult], [KeypairHelper], [KeypairGen], [KeypairManager], [KMAC256], [MD5], [Expiration], [HashParser], [HashInformation], [HashFormatDescriptor], [CipherObject], [SecretStore], [KSFConfigType], [opaqueServerLoginState], [opaqueClientRegistrationState],
   [opaqueClientLoginState], [opaqueKSFConfig], [opaqueOpaqueServer], [opaqueOpaqueClient], [KSFConfig], [OpaqueServer], [OpaqueClient], [OPAQUE], [OpenPgp], [OTPKIT], [Argon2id], [Argon2i], [Argon2d], [Scrypt], [Pbkdf2], [MLKemKeyPair], [MLKemEncapsulationResult], [MLKemCore], [MLKemBuilder], [MLDsaSecurityLevel], [MLDsaKeyPair],
   [MLDsaCore], [MLDsaBuilder], [SlhDsaKeyPair], [SlhDsaCore], [SlhDsaBuilder], [RabbitState], [Rabbit], [RSA], [S2KType], [S2K], [Secp256k1], [Secp256k1SignResult], [Keccak], [KeccakManaged], [IdentityHash], [DoubleSha256], [SHA3256], [SHA3384], [SHA3512], [SHAKE128Managed], [SHAKE256Managed], [KMAC128], [FipsHmacSha256], [BLAKE3],
   [TripleDES], [Asn1Parser], [PemParser], [SecureBox], [SecureArray], [NoiseProtocol], [VOPRF], [BitwUtil], [Shuffl3r], [SignatureUtils], [CryptobaseUtils], [VaultClient], [X509], [XChaCha20Poly1305], [XOR], [XSalsa20], [CryptoBase]
