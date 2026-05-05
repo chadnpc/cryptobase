@@ -163,7 +163,7 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $salt = HexToBytes "000102030405060708090a0b0c"
       $info = HexToBytes "f0f1f2f3f4f5f6f7f8f9"
       $expectedOkm = HexToBytes "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
-      
+
       $okm = [HkdfCore]::DeriveKey($ikm, $salt, $info, 42, "SHA256")
       ($okm -join ',') | Should Be ($expectedOkm -join ',')
     }
@@ -1003,13 +1003,12 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   }
 
   Context "S2K Key Derivation" {
+    $password = [System.Text.Encoding]::UTF8.GetBytes("password")
     It "S2K Simple should derive key" {
-      $password = [System.Text.Encoding]::UTF8.GetBytes("password")
       $key = [S2K]::SimpleS2K($password, 32, "SHA256")
       $key.Length | Should Be 32
     }
     It "S2K Iterated and Salted should derive key" {
-      $password = [System.Text.Encoding]::UTF8.GetBytes("password")
       $salt = [byte[]]@(1..8)
       $key = [S2K]::IteratedS2K($password, $salt, 1024, 32, "SHA256")
       $key.Length | Should Be 32
@@ -1205,7 +1204,7 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $encoded[0] | Should Be 0
       $encoded[1] | Should Be 3
       $encoded[2] | Should Be 5
-      
+
       $offset = [ref]0
       $decoded = [Mpi]::Read($encoded, $offset)
       $decoded | Should Be $val
@@ -1226,10 +1225,9 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       } else {
         $val = [System.Numerics.BigInteger]::new($bytes)
       }
-      
       $encoded = [Mpi]::Write($val)
       $encoded.Length | Should Be (2 + 256)
-      
+
       $offset = [ref]0
       $decoded = [Mpi]::Read($encoded, $offset)
       $decoded | Should Be $val
@@ -1267,10 +1265,9 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $content = [System.Text.Encoding]::UTF8.GetBytes("Hello OpenPGP")
       $date = [DateTimeOffset]::FromUnixTimeSeconds(1234567890)
       $packet = [PgpLiteralDataPacket]::new([PgpLiteralDataFormat]::Utf8, "test.txt", $date, $content)
-      
       $encoded = $packet.ToArray()
       $decoded = [PgpLiteralDataPacket]::Read($encoded)
-      
+
       $decoded.Format.ToString() | Should Be "Utf8"
       $decoded.FileName | Should Be "test.txt"
       $decoded.Date.ToUnixTimeSeconds() | Should Be 1234567890
@@ -1281,11 +1278,11 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $spec = [PgpS2KSpecifier]::new()
       $spec.Type = [S2KType]::Simple
       $spec.HashAlgorithm = [PgpHashAlgorithmId]::Sha256
-      
+
       $encoded = $spec.Write()
       $offset = [ref]0
       $decoded = [PgpS2KSpecifier]::Read($encoded, $offset)
-      
+
       [int]$decoded.Type | Should Be 0
       [int]$decoded.HashAlgorithm | Should Be 8
     }
@@ -1298,11 +1295,11 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $spec.Argon2MemoryExponent = 16
       $spec.Argon2Passes = 3
       $spec.Argon2Parallelism = 4
-      
+
       $encoded = $spec.Write()
       $offset = [ref]0
       $decoded = [PgpS2KSpecifier]::Read($encoded, $offset)
-      
+
       [int]$decoded.Type | Should Be 4
       ($decoded.Salt -join ',') | Should Be ($spec.Salt -join ',')
       $decoded.Argon2MemoryExponent | Should Be 16
@@ -1314,13 +1311,13 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $nEncoded = [Mpi]::Write($n)
       $eEncoded = [Mpi]::Write($e)
       $material = $nEncoded + $eEncoded
-      
+
       $date = [DateTimeOffset]::FromUnixTimeSeconds(1600000000)
       $packet = [PgpPublicKeyPacket]::new(4, $date, [PgpPublicKeyAlgorithm]::RsaEncryptOrSign, $material, $false)
-      
+
       $encoded = $packet.ToArray()
       $decoded = [PgpPublicKeyPacket]::Read($encoded, $false)
-      
+
       $decoded.Version | Should Be 4
       $decoded.Algorithm.ToString() | Should Be "RsaEncryptOrSign"
       $decoded.CreationTime.ToUnixTimeSeconds() | Should Be 1600000000
@@ -1328,4 +1325,4 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
     }
   }
   #endregion
-}
+}
