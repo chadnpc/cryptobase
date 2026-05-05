@@ -24,6 +24,6 @@ function Set-SecretVault {
     [string]$Secret
   )
   process {
-    [Vault]::SetSecret($Key, $Secret)
+    return [Vault]::SetSecret($Key, $Secret)
   }
 }
