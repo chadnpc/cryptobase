@@ -88,9 +88,10 @@ $isValid = [BCrypt]::Verify('my_secret', $hash) # Returns $true
 
 For a complete list of classes and their usage, see:
 
-- **[Usage docs](./docs/README.md)**: Categorized list of all major primitives.
-- **[OPAQUE Protocol](./docs/Opaque.md)**: Detailed guide for secure password authentication.
 - **[More about the main class](./docs/CryptoBase.md)** and cmdlet overview.
+- **[More usage docs](./docs/README.md)**: Categorized list of all major primitives.
+- **[OPAQUE Protocol](./docs/Opaque.md)**: Detailed guide for secure password authentication.
+
 
 
 **⚖️ License**
