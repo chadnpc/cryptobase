@@ -200,7 +200,7 @@ class S2K : CryptobaseUtils {
     $prefixCount = 0
 
     while ($offset -lt $keySize) {
-      $ih = [IncrementalHash]::CreateHash([HashAlgorithmName]::new($hashAlgorithmName))
+      $ih = [IncrementalHash]::CreateHash([HashAlgorithmName]::new($hashAlgorithmName.ToUpperInvariant()))
       if ($prefixCount -gt 0) {
         $ih.AppendData([byte[]]::new($prefixCount))
       }

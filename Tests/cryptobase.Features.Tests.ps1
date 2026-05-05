@@ -128,7 +128,7 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $key.Length | Should Be 64
     }
 
-    It "HkdfCore.Expand should produce correct length" {
+    It "HkdfCore Expand should produce correct length" {
       $prk = [byte[]]::new(32); [RandomNumberGenerator]::Fill($prk)
       $info = [Encoding]::UTF8.GetBytes("info")
       $expanded = [HkdfCore]::Expand($prk, $info, 64, "SHA256")
