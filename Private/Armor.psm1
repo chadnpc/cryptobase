@@ -128,27 +128,31 @@ class Armor : CryptobaseUtils {
   }
 
   static hidden [string] GetArmorTypeName([ArmorType]$type) {
-    switch ($type) {
-      ([ArmorType]::Message) { return "MESSAGE" }
-      ([ArmorType]::PublicKey) { return "PUBLIC KEY BLOCK" }
-      ([ArmorType]::PrivateKey) { return "PRIVATE KEY BLOCK" }
-      ([ArmorType]::Signature) { return "SIGNATURE" }
-      ([ArmorType]::SignedMessage) { return "SIGNED MESSAGE" }
-      Default { throw [ArgumentException]::new("Unknown armor type: $type") }
+    [ValidateNotNull()][ArmorType]$type = $type
+    $n = [string]::Empty
+    $n = switch ($type) {
+      ([ArmorType]::Message) { "MESSAGE"; break }
+      ([ArmorType]::PublicKey) { "PUBLIC KEY BLOCK"; break }
+      ([ArmorType]::PrivateKey) { "PRIVATE KEY BLOCK"; break }
+      ([ArmorType]::Signature) { "SIGNATURE"; break }
+      ([ArmorType]::SignedMessage) { "SIGNED MESSAGE"; break }
+      default { throw [ArgumentException]::new("Unknown armor type: $type") }
     }
-    return ""
+    return $n
   }
 
   static hidden [ArmorType] ParseArmorType([string]$typeName) {
-    switch ($typeName.ToUpperInvariant()) {
-      "MESSAGE" { return [ArmorType]::Message }
-      "PUBLIC KEY BLOCK" { return [ArmorType]::PublicKey }
-      "PRIVATE KEY BLOCK" { return [ArmorType]::PrivateKey }
-      "SECRET KEY BLOCK" { return [ArmorType]::PrivateKey }
-      "SIGNATURE" { return [ArmorType]::Signature }
-      "SIGNED MESSAGE" { return [ArmorType]::SignedMessage }
-      Default { throw [FormatException]::new("Unknown armor type: $typeName") }
+    [ValidateNotNullOrWhiteSpace()][string]$typeName = $typeName
+    $type = [ArmorType]::Message
+    $type = switch ($typeName.ToUpperInvariant()) {
+      "MESSAGE" { [ArmorType]::Message ; break }
+      "PUBLIC KEY BLOCK" { [ArmorType]::PublicKey; break }
+      "PRIVATE KEY BLOCK" { [ArmorType]::PrivateKey; break }
+      "SECRET KEY BLOCK" { [ArmorType]::PrivateKey; break }
+      "SIGNATURE" { [ArmorType]::Signature; break }
+      "SIGNED MESSAGE" { [ArmorType]::SignedMessage; break }
+      default { throw [FormatException]::new("Unknown armor type: $typeName") }
     }
-    return [ArmorType]::Message
+    return $type
   }
 }
