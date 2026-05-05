@@ -36,7 +36,6 @@ function New-CryptoKeyPair {
   )
   process {
     $result = $null
-    
     # Simple delegation based on most common standard usages
     if ($Algorithm -eq [AsymmetricAlgorithm]::ED25519) {
       $result = [KeypairGen]::GenerateEd25519($Format)
@@ -48,14 +47,13 @@ function New-CryptoKeyPair {
       $result = [KeypairGen]::GenerateMLKem([MLKemSecurityLevel]::MLKem768, $Format)
     } else {
       # Fallback logic to generic manager
-      $result = [KeypairGen]::GenerateRSA($Size, $Format) 
+      $result = [KeypairGen]::GenerateRSA($Size, $Format)
       Write-Warning "Fallback to RSA. Algorithm $Algorithm specific wrapper not fully exposed in pipeline wrapper yet."
     }
 
     if ($ExportPath) {
       $pubPath = [System.IO.Path]::Combine($ExportPath, "public.key")
       $privPath = [System.IO.Path]::Combine($ExportPath, "private.key")
-      
       if ($Format -eq [KeyFormat]::Pem) {
         [System.IO.File]::WriteAllText($pubPath, $result.PublicKeyPem)
         [System.IO.File]::WriteAllText($privPath, $result.PrivateKeyPem)
