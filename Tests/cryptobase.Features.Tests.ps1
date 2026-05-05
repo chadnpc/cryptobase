@@ -1,3 +1,5 @@
+using namespace System.Text
+using namespace System.Security.Cryptography
 using module ..\cryptobase.psm1
 
 Describe "Feature tests: cryptobase - Cryptographic Classes" {
@@ -111,30 +113,59 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   }
 
   #region HKDF Tests
-  Context "HKDF Key Derivation" {
-    It "HKDF should derive key material" {
+  Context "HKDF - HMAC-based Key Derivation Function" {
+    It "HkdfCore should derive key material (SHA-256)" {
       $ikm = [byte[]]@(0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b)
       $salt = [byte[]]@(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c)
       $info = [byte[]]@(0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9)
-      $key = [HkdfCore]::DeriveKey($ikm, $salt, $info, 32)
+      $key = [HkdfCore]::DeriveKey($ikm, $salt, $info, 32, "SHA256")
       $key.Length | Should Be 32
     }
 
-    It "HKDF.Expand should produce correct length" {
-      $prk = [byte[]]::new(32)
-      [System.Security.Cryptography.RandomNumberGenerator]::Fill($prk)
-      $info = [System.Text.Encoding]::UTF8.GetBytes("info")
-      $expanded = [HkdfCore]::HkdfExpand($prk, $info, 64)
+    It "HkdfCore should support SHA-512" {
+      $ikm = [byte[]]::new(32); [RandomNumberGenerator]::Fill($ikm)
+      $key = [HkdfCore]::DeriveKey($ikm, $null, $null, 64, "SHA512")
+      $key.Length | Should Be 64
+    }
+
+    It "HkdfCore.Expand should produce correct length" {
+      $prk = [byte[]]::new(32); [RandomNumberGenerator]::Fill($prk)
+      $info = [Encoding]::UTF8.GetBytes("info")
+      $expanded = [HkdfCore]::Expand($prk, $info, 64, "SHA256")
       $expanded.Length | Should Be 64
     }
 
-    It "HKDF should derive multiple keys" {
-      $ikm = [byte[]]::new(32)
-      [System.Security.Cryptography.RandomNumberGenerator]::Fill($ikm)
-      $key1 = [HkdfCore]::DeriveKey($ikm, $null, [System.Text.Encoding]::UTF8.GetBytes("key1"), 32)
-      $key2 = [HkdfCore]::DeriveKey($ikm, $null, [System.Text.Encoding]::UTF8.GetBytes("key2"), 32)
-      $same = ([int[]]$key1 | Measure-Object -Sum).Sum -eq ([int[]]$key2 | Measure-Object -Sum).Sum
-      $same | Should Be $false
+    It "HkdfCore should derive different keys for different contexts" {
+      $ikm = [byte[]]::new(32); [RandomNumberGenerator]::Fill($ikm)
+      $key1 = [HkdfCore]::DeriveKey($ikm, $null, [Encoding]::UTF8.GetBytes("key1"), 32)
+      $key2 = [HkdfCore]::DeriveKey($ikm, $null, [Encoding]::UTF8.GetBytes("key2"), 32)
+      ($key1 -join ',') | Should Not Be ($key2 -join ',')
+    }
+
+    It "HkdfBuilder should work correctly" {
+      $ikm = [Encoding]::UTF8.GetBytes("master-secret")
+      $builder = [HkdfBuilder]::Create().WithInputKeyMaterial($ikm).WithRandomSalt().WithInfo("app-context").WithOutputLength(32)
+      $key = $builder.DeriveKey()
+      $key.Length | Should Be 32
+      $builder.Dispose()
+    }
+
+    It "HkdfBuilder should support presets" {
+      $ikm = [Encoding]::UTF8.GetBytes("master-secret")
+      $builder = [HkdfBuilder]::Create().WithHighSecurityPreset().WithInputKeyMaterial($ikm)
+      $key = $builder.DeriveKey()
+      $key.Length | Should Be 64
+      $builder.Dispose()
+    }
+
+    It "RFC 5869 Test Case 1 (SHA-256)" {
+      $ikm = HexToBytes "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
+      $salt = HexToBytes "000102030405060708090a0b0c"
+      $info = HexToBytes "f0f1f2f3f4f5f6f7f8f9"
+      $expectedOkm = HexToBytes "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
+      
+      $okm = [HkdfCore]::DeriveKey($ikm, $salt, $info, 42, "SHA256")
+      ($okm -join ',') | Should Be ($expectedOkm -join ',')
     }
   }
   #endregion
@@ -472,22 +503,51 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   #endregion
 
   #region AesCCM Tests
-  Context "AES-CCM AEAD" {
-    It "AesCCM should encrypt and decrypt" {
-      $aesCcm = [AesCCMCore]::new()
-      $encrypted = $aesCcm.Encrypt($testData)
-      $decrypted = $aesCcm.Decrypt($encrypted)
-      $decrypted | Should Be $testData
+  Context "AES-CCM - Counter with CBC-MAC" {
+    It "AesCcmCore should encrypt and decrypt (AES-128)" {
+      $key = [byte[]]::new(16); [RandomNumberGenerator]::Fill($key)
+      $nonce = [byte[]]::new(13); [RandomNumberGenerator]::Fill($nonce)
+      $result = [AesCcmCore]::Encrypt($testData, $key, $nonce)
+      $decrypted = [AesCcmCore]::Decrypt($result.Ciphertext, $key, $result.Nonce)
+      ($decrypted -join ',') | Should Be ($testData -join ',')
     }
 
-    It "AesCCM should reject tampered ciphertext" {
-      $aesCcm = [AesCCMCore]::new()
-      $encrypted = $aesCcm.Encrypt($testData)
-      $tampered = $encrypted.Clone()
-      $tampered[0] = ($tampered[0] + 1) % 256
-      $threw = $false
-      try { $aesCcm.Decrypt($tampered) } catch { $threw = $true }
-      $threw | Should Be $true
+    It "AesCcmCore should support associated data" {
+      $key = [byte[]]::new(32); [RandomNumberGenerator]::Fill($key)
+      $nonce = [byte[]]::new(13); [RandomNumberGenerator]::Fill($nonce)
+      $ad = [Encoding]::UTF8.GetBytes("associated-data")
+      $result = [AesCcmCore]::Encrypt($testDataShort, $key, $nonce, $ad)
+      $decrypted = [AesCcmCore]::Decrypt($result.Ciphertext, $key, $result.Nonce, $ad)
+      ($decrypted -join ',') | Should Be ($testDataShort -join ',')
+    }
+
+    It "AesCcmCore should reject tampered ciphertext" {
+      $key = [byte[]]::new(16); [RandomNumberGenerator]::Fill($key)
+      $nonce = [byte[]]::new(13); [RandomNumberGenerator]::Fill($nonce)
+      $result = [AesCcmCore]::Encrypt($testData, $key, $nonce)
+      $tampered = [byte[]]$result.Ciphertext.Clone()
+      $tampered[0] = ($tampered[0] -bxor 0xFF)
+      Assert-Throws { [AesCcmCore]::Decrypt($tampered, $key, $nonce) }
+    }
+
+    It "AesCcmBuilder should work correctly" {
+      $key = [byte[]]::new(16); [RandomNumberGenerator]::Fill($key)
+      $ccm = [AesCcmBuilder]::Create().WithKey($key).WithRandomNonce(13).WithTagSize(16)
+      $encrypted = $ccm.Encrypt($testData)
+      $decrypted = $ccm.Decrypt($encrypted)
+      ($decrypted -join ',') | Should Be ($testData -join ',')
+      $ccm.Dispose()
+    }
+
+    It "AesCcm RFC 3610 Test Vector 1" {
+      $key = [byte[]]@(0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF)
+      $nonce = [byte[]]@(0x00, 0x00, 0x00, 0x03, 0x02, 0x01, 0x00, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5)
+      $plaintext = [byte[]]@(0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E)
+      $ad = [byte[]]@(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07)
+      $expected = [byte[]]@(0x58, 0x8C, 0x97, 0x9A, 0x61, 0xC6, 0x63, 0xD2, 0xF0, 0x66, 0xD0, 0xC2, 0xC0, 0xF9, 0x89, 0x80, 0x6D, 0x5F, 0x6B, 0x61, 0xDA, 0xC3, 0x84, 0x17, 0xE8, 0xD1, 0x2C, 0xFD, 0xF9, 0x26, 0xE0)
+
+      $result = [AesCcmCore]::Encrypt($plaintext, $key, $nonce, $ad, 8)
+      ($result.Ciphertext -join ',') | Should Be ($expected -join ',')
     }
   }
   #endregion
