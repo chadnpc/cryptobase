@@ -18,9 +18,7 @@ using namespace System.Collections.ObjectModel
 
 using module Private/Enums.psm1
 using module Private/Exceptions.psm1
-using module Private/Hkdf.psm1
 using module Private/Utilities.psm1
-using module Private/Models.psm1
 using module Private/AesCCM.psm1
 using module Private/AesCfb.psm1
 using module Private/AesCmac.psm1
@@ -39,9 +37,11 @@ using module Private/Curve25519.psm1
 using module Private/Ecdsa.psm1
 using module Private/EdwardsCurve.psm1
 using module Private/EllipticCurve.psm1
+using module Private/Models.psm1
 using module Private/FileMonitor.psm1
 using module Private/Hc128.psm1
 using module Private/Hc256.psm1
+using module Private/Hkdf.psm1
 using module Private/KeypairGen.psm1
 using module Private/KMACAuth.psm1
 using module Private/MD5.psm1
@@ -83,9 +83,9 @@ SYNOPSIS
     <Object> | cryptobase <Method>
 
 DESCRIPTION
-    Provides high-level convenience methods for common cryptographic tasks such as 
-    encryption, decryption, signing, and file obfuscation. When using pipeline 
-    input, you can use the single-parameter method overloads which will prompt 
+    Provides high-level convenience methods for common cryptographic tasks such as
+    encryption, decryption, signing, and file obfuscation. When using pipeline
+    input, you can use the single-parameter method overloads which will prompt
     you for any required passwords interactively.
 
 METHODS
@@ -159,8 +159,7 @@ EXAMPLES
     $aes = [System.Security.Cryptography.AesGcm]::new($key)
     try {
       $aes.Encrypt($nonce, $plainbytes, $ciphertext, $tag, $aad)
-    }
-    finally {
+    } finally {
       $aes.Dispose()
       [Array]::Clear($passBytes, 0, $passBytes.Length)
       [Array]::Clear($key, 0, $key.Length)
@@ -198,8 +197,7 @@ EXAMPLES
     $aes = [System.Security.Cryptography.AesGcm]::new($aesKey)
     try {
       $aes.Encrypt($aesNonce, $plainbytes, $innerCiphertext, $aesTag)
-    }
-    finally {
+    } finally {
       $aes.Dispose()
       [Array]::Clear($aesKey, 0, $aesKey.Length)
     }
@@ -247,8 +245,7 @@ EXAMPLES
     try {
       $aes.Decrypt($aesNonce, $innerCiphertext, $aesTag, $plainbytes)
       return $plainbytes
-    }
-    finally {
+    } finally {
       $aes.Dispose()
       [Array]::Clear($aesKey, 0, $aesKey.Length)
     }
@@ -327,8 +324,7 @@ EXAMPLES
     try {
       $aes.Decrypt($nonce, $ciphertext, $tag, $plainbytes, $aad)
       return $plainbytes
-    }
-    finally {
+    } finally {
       $aes.Dispose()
       [Array]::Clear($passBytes, 0, $passBytes.Length)
       [Array]::Clear($key, 0, $key.Length)
@@ -398,8 +394,7 @@ EXAMPLES
     $mdp = [Marshal]::SecureStringToBSTR($ss)
     try {
       $result = [Marshal]::PtrToStringBSTR($mdp)
-    }
-    finally {
+    } finally {
       [Marshal]::ZeroFreeBSTR($mdp)
       $ss.Dispose()
     }
@@ -411,8 +406,7 @@ EXAMPLES
     try {
       $currentPath = (Get-Location).Path
       return [Path]::GetFullPath([Path]::Combine($currentPath, $path))
-    }
-    catch {
+    } catch {
       return [Path]::GetFullPath($path)
     }
   }
@@ -438,8 +432,7 @@ $TypeAcceleratorsClass = [PsObject].Assembly.GetType('System.Management.Automati
 foreach ($Type in $typestoExport) {
   try {
     $TypeAcceleratorsClass::Add($Type.FullName, $Type)
-  }
-  catch {
+  } catch {
     # Ignore if already exists
     $null
   }
@@ -460,8 +453,7 @@ foreach ($file in $scripts) {
   try {
     if ([string]::IsNullOrWhiteSpace($file.fullname)) { continue }
     . "$($file.fullname)"
-  }
-  catch {
+  } catch {
     Write-Warning "Failed to import function $($file.BaseName): $_"
     $host.UI.WriteErrorLine($_)
   }
