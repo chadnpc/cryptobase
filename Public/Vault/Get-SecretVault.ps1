@@ -19,6 +19,6 @@ function Get-SecretVault {
     [string]$Key
   )
   process {
-    [Vault]::GetSecret($Key)
+    return [Vault]::GetSecret($Key)
   }
 }
