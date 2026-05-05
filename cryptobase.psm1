@@ -47,9 +47,6 @@ using module Private/KMACAuth.psm1
 using module Private/MD5.psm1
 using module Private/opaque.psm1
 using module Private/OpenPgp.psm1
-using module Private/OpenPgpEnums.psm1
-using module Private/OpenPgpCore.psm1
-using module Private/OpenPgpPackets.psm1
 using module Private/OTPKIT.psm1
 using module Private/PasswordHashing.psm1
 using module Private/Pbkdf2.psm1
