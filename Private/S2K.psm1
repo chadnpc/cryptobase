@@ -4,6 +4,8 @@ using namespace System.Collections.Generic
 using namespace System.Security.Cryptography
 
 using module ./Utilities.psm1
+using module ./PasswordHashing.psm1
+using module ./OpenPgpEnums.psm1
 
 enum S2KType : byte {
   Simple = 0
@@ -13,27 +15,145 @@ enum S2KType : byte {
   Argon2 = 4
 }
 
-class S2K : CryptobaseUtils {
-  static [byte[]] SimpleS2K([byte[]]$password, [int]$keySize, [string]$hashAlgorithm) {
-    return [S2K]::DeriveWithPrefix($password, $keySize, $hashAlgorithm)
+class PgpS2KSpecifier {
+  [S2KType] $Type
+  [PgpHashAlgorithmId] $HashAlgorithm
+  [byte[]] $Salt
+  [byte] $EncodedCount
+  [int] $Argon2Passes
+  [int] $Argon2Parallelism
+  [int] $Argon2MemoryExponent
+
+  PgpS2KSpecifier() {}
+
+  static [PgpS2KSpecifier] Read([byte[]]$data, [ref]$offset) {
+    if ($data.Length -lt $offset.Value + 2) { throw [ArgumentException]::new("Data too short for S2K specifier.") }
+    
+    $spec = [PgpS2KSpecifier]::new()
+    $spec.Type = [S2KType]$data[$offset.Value]
+    $spec.HashAlgorithm = [PgpHashAlgorithmId]$data[$offset.Value + 1]
+    
+    switch ($spec.Type) {
+      ([S2KType]::Simple) {
+        $offset.Value += 2
+      }
+      ([S2KType]::Salted) {
+        if ($data.Length -lt $offset.Value + 10) { throw [ArgumentException]::new("Data too short for Salted S2K.") }
+        $spec.Salt = [byte[]]::new(8)
+        [Array]::Copy($data, $offset.Value + 2, $spec.Salt, 0, 8)
+        $offset.Value += 10
+      }
+      ([S2KType]::IteratedAndSalted) {
+        if ($data.Length -lt $offset.Value + 11) { throw [ArgumentException]::new("Data too short for Iterated S2K.") }
+        $spec.Salt = [byte[]]::new(8)
+        [Array]::Copy($data, $offset.Value + 2, $spec.Salt, 0, 8)
+        $spec.EncodedCount = $data[$offset.Value + 10]
+        $offset.Value += 11
+      }
+      ([S2KType]::Argon2) {
+        if ($data.Length -lt $offset.Value + 21) { throw [ArgumentException]::new("Data too short for Argon2 S2K.") }
+        $spec.Salt = [byte[]]::new(16)
+        [Array]::Copy($data, $offset.Value + 2, $spec.Salt, 0, 16)
+        $spec.Argon2MemoryExponent = [int]$data[$offset.Value + 18]
+        $spec.Argon2Passes = [int]$data[$offset.Value + 19]
+        $spec.Argon2Parallelism = [int]$data[$offset.Value + 20]
+        $offset.Value += 21
+      }
+      default {
+        throw [ArgumentException]::new("Unknown S2K type: $($spec.Type)")
+      }
+    }
+    return $spec
   }
 
-  static [byte[]] SaltedS2K([byte[]]$password, [byte[]]$salt, [int]$keySize, [string]$hashAlgorithm) {
+  [byte[]] Write() {
+    switch ($this.Type) {
+      ([S2KType]::Simple) {
+        return [byte[]]@([byte]$this.Type, [byte]$this.HashAlgorithm)
+      }
+      ([S2KType]::Salted) {
+        [byte[]]$res = [byte[]]::new(10)
+        $res[0] = [byte]$this.Type
+        $res[1] = [byte]$this.HashAlgorithm
+        [Array]::Copy($this.Salt, 0, $res, 2, 8)
+        return $res
+      }
+      ([S2KType]::IteratedAndSalted) {
+        [byte[]]$res = [byte[]]::new(11)
+        $res[0] = [byte]$this.Type
+        $res[1] = [byte]$this.HashAlgorithm
+        [Array]::Copy($this.Salt, 0, $res, 2, 8)
+        $res[10] = $this.EncodedCount
+        return $res
+      }
+      ([S2KType]::Argon2) {
+        [byte[]]$res = [byte[]]::new(21)
+        $res[0] = [byte]$this.Type
+        $res[1] = [byte]$this.HashAlgorithm
+        [Array]::Copy($this.Salt, 0, $res, 2, 16)
+        $res[18] = [byte]$this.Argon2MemoryExponent
+        $res[19] = [byte]$this.Argon2Passes
+        $res[20] = [byte]$this.Argon2Parallelism
+        return $res
+      }
+    }
+    return $null
+  }
+
+  [long] GetIterationCount() {
+    if ($this.Type -ne [S2KType]::IteratedAndSalted) { return 0 }
+    return [S2K]::DecodeIterationCount($this.EncodedCount)
+  }
+}
+
+class S2K : CryptobaseUtils {
+  static [byte[]] SimpleS2K([byte[]]$password, [int]$keySize, [PgpHashAlgorithmId]$hashAlgorithm) {
+    return [S2K]::DeriveWithPrefix($password, $keySize, $hashAlgorithm.ToString())
+  }
+
+  static [byte[]] SaltedS2K([byte[]]$password, [byte[]]$salt, [int]$keySize, [PgpHashAlgorithmId]$hashAlgorithm) {
     if ($salt.Length -ne 8) { throw [ArgumentException]::new("Salt must be 8 bytes.") }
     $combined = [byte[]]::new($salt.Length + $password.Length)
     [Array]::Copy($salt, 0, $combined, 0, $salt.Length)
     [Array]::Copy($password, 0, $combined, $salt.Length, $password.Length)
-    return [S2K]::DeriveWithPrefix($combined, $keySize, $hashAlgorithm)
+    return [S2K]::DeriveWithPrefix($combined, $keySize, $hashAlgorithm.ToString())
   }
 
-  static [byte[]] IteratedS2K([byte[]]$password, [byte[]]$salt, [long]$count, [int]$keySize, [string]$hashAlgorithm) {
+  static [byte[]] IteratedS2K([byte[]]$password, [byte[]]$salt, [long]$count, [int]$keySize, [PgpHashAlgorithmId]$hashAlgorithm) {
     if ($salt.Length -ne 8) { throw [ArgumentException]::new("Salt must be 8 bytes.") }
     $combined = [byte[]]::new($salt.Length + $password.Length)
     [Array]::Copy($salt, 0, $combined, 0, $salt.Length)
     [Array]::Copy($password, 0, $combined, $salt.Length, $password.Length)
 
     if ($count -lt $combined.Length) { $count = $combined.Length }
-    return [S2K]::DeriveIteratedKey($combined, $count, $keySize, $hashAlgorithm)
+    return [S2K]::DeriveIteratedKey($combined, $count, $keySize, $hashAlgorithm.ToString())
+  }
+
+  static [byte[]] Argon2S2K([byte[]]$password, [byte[]]$salt, [int]$memExp, [int]$passes, [int]$parallelism, [int]$keySize) {
+    # Argon2 Memory = 2^exponent KB
+    $memKB = [int][Math]::Pow(2, $memExp)
+    return [Argon2id]::Hash($password, $salt, $memKB, $passes, $parallelism, $keySize)
+  }
+
+  static [byte[]] Derive([byte[]]$password, [PgpS2KSpecifier]$spec, [int]$keySize) {
+    switch ($spec.Type) {
+      ([S2KType]::Simple) {
+        return [S2K]::SimpleS2K($password, $keySize, $spec.HashAlgorithm)
+      }
+      ([S2KType]::Salted) {
+        return [S2K]::SaltedS2K($password, $spec.Salt, $keySize, $spec.HashAlgorithm)
+      }
+      ([S2KType]::IteratedAndSalted) {
+        return [S2K]::IteratedS2K($password, $spec.Salt, $spec.GetIterationCount(), $keySize, $spec.HashAlgorithm)
+      }
+      ([S2KType]::Argon2) {
+        return [S2K]::Argon2S2K($password, $spec.Salt, $spec.Argon2MemoryExponent, $spec.Argon2Passes, $spec.Argon2Parallelism, $keySize)
+      }
+      default {
+        throw [ArgumentException]::new("Unsupported S2K type: $($spec.Type)")
+      }
+    }
+    return $null
   }
 
   static [long] DecodeIterationCount([byte]$encodedCount) {
@@ -126,4 +246,5 @@ class S2K : CryptobaseUtils {
     return $result
   }
 }
+
 
