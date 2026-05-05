@@ -12,6 +12,7 @@ function Remove-SecretVault {
   .EXAMPLE
   PS C:\> Remove-SecretVault -Key "API_KEY"
   #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
   [CmdletBinding()]
   param(
     [Parameter(Mandatory, Position = 0)]
