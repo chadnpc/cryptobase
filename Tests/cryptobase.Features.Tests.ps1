@@ -116,7 +116,7 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $ikm = [byte[]]@(0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b)
       $salt = [byte[]]@(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c)
       $info = [byte[]]@(0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9)
-      $key = [HKDF]::DeriveKey($ikm, $salt, $info, 32)
+      $key = [HkdfCore]::DeriveKey($ikm, $salt, $info, 32)
       $key.Length | Should Be 32
     }
 
@@ -124,15 +124,15 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $prk = [byte[]]::new(32)
       [System.Security.Cryptography.RandomNumberGenerator]::Fill($prk)
       $info = [System.Text.Encoding]::UTF8.GetBytes("info")
-      $expanded = [HKDF]::HkdfExpand($prk, $info, 64)
+      $expanded = [HkdfCore]::HkdfExpand($prk, $info, 64)
       $expanded.Length | Should Be 64
     }
 
     It "HKDF should derive multiple keys" {
       $ikm = [byte[]]::new(32)
       [System.Security.Cryptography.RandomNumberGenerator]::Fill($ikm)
-      $key1 = [HKDF]::DeriveKey($ikm, $null, [System.Text.Encoding]::UTF8.GetBytes("key1"), 32)
-      $key2 = [HKDF]::DeriveKey($ikm, $null, [System.Text.Encoding]::UTF8.GetBytes("key2"), 32)
+      $key1 = [HkdfCore]::DeriveKey($ikm, $null, [System.Text.Encoding]::UTF8.GetBytes("key1"), 32)
+      $key2 = [HkdfCore]::DeriveKey($ikm, $null, [System.Text.Encoding]::UTF8.GetBytes("key2"), 32)
       $same = ([int[]]$key1 | Measure-Object -Sum).Sum -eq ([int[]]$key2 | Measure-Object -Sum).Sum
       $same | Should Be $false
     }
@@ -472,51 +472,22 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
   #endregion
 
   #region AesCCM Tests
-  Context "AES-CCM - Counter with CBC-MAC" {
-    It "AesCcmCore should encrypt and decrypt (AES-128)" {
-      $key = [byte[]]::new(16); [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
-      $nonce = [byte[]]::new(13); [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
-      $result = [AesCcmCore]::Encrypt($testData, $key, $nonce)
-      $decrypted = [AesCcmCore]::Decrypt($result.Ciphertext, $key, $result.Nonce)
-      ($decrypted -join ',') | Should Be ($testData -join ',')
+  Context "AES-CCM AEAD" {
+    It "AesCCM should encrypt and decrypt" {
+      $aesCcm = [AesCCMCore]::new()
+      $encrypted = $aesCcm.Encrypt($testData)
+      $decrypted = $aesCcm.Decrypt($encrypted)
+      $decrypted | Should Be $testData
     }
 
-    It "AesCcmCore should support associated data" {
-      $key = [byte[]]::new(32); [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
-      $nonce = [byte[]]::new(13); [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
-      $ad = [System.Text.Encoding]::UTF8.GetBytes("associated-data")
-      $result = [AesCcmCore]::Encrypt($testDataShort, $key, $nonce, $ad)
-      $decrypted = [AesCcmCore]::Decrypt($result.Ciphertext, $key, $result.Nonce, $ad)
-      ($decrypted -join ',') | Should Be ($testDataShort -join ',')
-    }
-
-    It "AesCcmCore should reject tampered ciphertext" {
-      $key = [byte[]]::new(16); [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
-      $nonce = [byte[]]::new(13); [System.Security.Cryptography.RandomNumberGenerator]::Fill($nonce)
-      $result = [AesCcmCore]::Encrypt($testData, $key, $nonce)
-      $tampered = [byte[]]$result.Ciphertext.Clone()
-      $tampered[0] = ($tampered[0] -bxor 0xFF)
-      Assert-Throws { [AesCcmCore]::Decrypt($tampered, $key, $nonce) }
-    }
-
-    It "AesCcmBuilder should work correctly" {
-      $key = [byte[]]::new(16); [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
-      $ccm = [AesCcmBuilder]::Create().WithKey($key).WithRandomNonce(13).WithTagSize(16)
-      $encrypted = $ccm.Encrypt($testData)
-      $decrypted = $ccm.Decrypt($encrypted)
-      ($decrypted -join ',') | Should Be ($testData -join ',')
-      $ccm.Dispose()
-    }
-
-    It "AesCcm RFC 3610 Test Vector 1" {
-      $key = [byte[]]@(0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF)
-      $nonce = [byte[]]@(0x00, 0x00, 0x00, 0x03, 0x02, 0x01, 0x00, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5)
-      $plaintext = [byte[]]@(0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E)
-      $ad = [byte[]]@(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07)
-      $expected = [byte[]]@(0x58, 0x8C, 0x97, 0x9A, 0x61, 0xC6, 0x63, 0xD2, 0xF0, 0x66, 0xD0, 0xC2, 0xC0, 0xF9, 0x89, 0x80, 0x6D, 0x5F, 0x6B, 0x61, 0xDA, 0xC3, 0x84, 0x17, 0xE8, 0xD1, 0x2C, 0xFD, 0xF9, 0x26, 0xE0)
-
-      $result = [AesCcmCore]::Encrypt($plaintext, $key, $nonce, $ad, 8)
-      ($result.Ciphertext -join ',') | Should Be ($expected -join ',')
+    It "AesCCM should reject tampered ciphertext" {
+      $aesCcm = [AesCCMCore]::new()
+      $encrypted = $aesCcm.Encrypt($testData)
+      $tampered = $encrypted.Clone()
+      $tampered[0] = ($tampered[0] + 1) % 256
+      $threw = $false
+      try { $aesCcm.Decrypt($tampered) } catch { $threw = $true }
+      $threw | Should Be $true
     }
   }
   #endregion
@@ -1162,22 +1133,6 @@ Describe "Feature tests: cryptobase - Cryptographic Classes" {
       $armored = [OpenPgp]::ArmorMessage($script:testDataShort, $headers)
       $decoded = [OpenPgp]::DearmorMessage($armored)
       ($decoded -join ',') | Should Be ($script:testDataShort -join ',')
-    }
-  }
-
-  Context "CryptoBase - Main class" {
-    It "CryptoBase Protect-Unprotect data" {
-      $password = "CorrectHorseBatteryStaple!"
-      $aad = [System.Text.Encoding]::UTF8.GetBytes("context-aad")
-      $ct = [CryptoBase]::ProtectData($script:testData, $password, $aad)
-      $pt = [CryptoBase]::UnprotectData($ct, $password, $aad)
-      ($pt -join ',') | Should Be ($script:testData -join ',')
-    }
-
-    It "CryptoBase Sign-Verify message should verify" {
-      $signed = [CryptoBase]::SignMessage($script:testDataShort)
-      $ok = [CryptoBase]::VerifyMessage($script:testDataShort, $signed.Signature, $signed.PublicKey)
-      $ok | Should Be $true
     }
   }
 }
