@@ -18,6 +18,6 @@ function Remove-SecretVault {
     [string]$Key
   )
   process {
-    [Vault]::DeleteSecret($Key)
+    return [Vault]::DeleteSecret($Key)
   }
 }
