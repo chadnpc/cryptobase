@@ -11,7 +11,7 @@ using module ./OpenPgpCore.psm1
 using module ./OpenPgpPackets.psm1
 
 class OpenPgp : CryptobaseUtils {
-  static [string] ArmorMessage([byte[]]$data, [Dictionary[string,string]]$headers) {
+  static [string] ArmorMessage([byte[]]$data, [Dictionary[string, sting]]$headers) {
     return [Armor]::Encode($data, [ArmorType]::Message, $headers)
   }
 
