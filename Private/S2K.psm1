@@ -249,5 +249,3 @@ class S2K : CryptobaseUtils {
     return $size
   }
 }
-
-
