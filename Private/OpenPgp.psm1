@@ -14,23 +14,23 @@ using module ./S2K.psm1
 class Mpi {
   static [BigInteger] Read([byte[]]$data, [ref]$offset) {
     if ($data.Length -lt $offset.Value + 2) { throw [ArgumentException]::new("Data too short for MPI bit count.") }
-    
+
     # Bit count is big-endian 2 octets
     [int]$bitCount = ([int]$data[$offset.Value] -shl 8) -bor [int]$data[$offset.Value + 1]
     [int]$byteCount = [Math]::Ceiling($bitCount / 8.0)
-    
+
     if ($data.Length -lt $offset.Value + 2 + $byteCount) { throw [ArgumentException]::new("Data too short for MPI value.") }
-    
+
     $mpiData = [byte[]]::new($byteCount)
     [Array]::Copy($data, $offset.Value + 2, $mpiData, 0, $byteCount)
-    
+
     $offset.Value += 2 + $byteCount
-    
+
     if ($byteCount -eq 0) { return [BigInteger]::Zero }
-    
+
     # BigInteger expects little-endian, MPI is big-endian
     [Array]::Reverse($mpiData)
-    
+
     # Ensure positive by checking high bit of original MSB (now at end of reversed array)
     if (($mpiData[$byteCount - 1] -band 0x80) -ne 0) {
       $unsignedData = [byte[]]::new($byteCount + 1)
@@ -38,22 +38,22 @@ class Mpi {
       # $unsignedData[$byteCount] is already 0
       return [BigInteger]::new($unsignedData)
     }
-    
+
     return [BigInteger]::new($mpiData)
   }
 
   static [byte[]] Write([BigInteger]$value) {
     if ($value -lt 0) { throw [ArgumentOutOfRangeException]::new("MPI values must be non-negative.") }
     if ($value.IsZero) { return [byte[]]@(0, 0) }
-    
+
     $bytes = $value.ToByteArray() # Little-endian
     $length = $bytes.Length
-    
+
     # Remove trailing zero if it was added for sign bit
     if ($bytes[$length - 1] -eq 0 -and $length -gt 1) {
       $length--
     }
-    
+
     # Calculate bit count
     $msb = $bytes[$length - 1]
     $bitsInMsb = 0
@@ -63,16 +63,16 @@ class Mpi {
       $bitsInMsb++
     }
     $bitCount = ($length - 1) * 8 + $bitsInMsb
-    
+
     $res = [byte[]]::new(2 + $length)
     $res[0] = [byte]($bitCount -shr 8)
     $res[1] = [byte]($bitCount -band 0xFF)
-    
+
     # Write bytes in big-endian
     for ($i = 0; $i -lt $length; $i++) {
       $res[2 + $i] = $bytes[$length - 1 - $i]
     }
-    
+
     return $res
   }
 }
@@ -86,24 +86,23 @@ class PgpPacketHeader {
 
   static [PgpPacketHeader] Read([byte[]]$data, [int]$offset) {
     if ($data.Length -le $offset) { return $null }
-    
+
     $headerByte = $data[$offset]
     if (($headerByte -band 0x80) -eq 0) { throw [FormatException]::new("Invalid packet header: bit 7 not set.") }
-    
+
     $header = [PgpPacketHeader]::new()
     $header.Format = ($headerByte -band 0x40) -eq 0x40 ? [PgpPacketFormat]::New : [PgpPacketFormat]::Old
-    
+
     if ($header.Format -eq [PgpPacketFormat]::New) {
       $header.Tag = [PgpPacketTag]($headerByte -band 0x3F)
       $lenInfo = [PgpPacketHeader]::ReadNewLength($data, $offset + 1)
       $header.Length = $lenInfo.Length
       $header.IsPartial = $lenInfo.IsPartial
       $header.HeaderLength = 1 + $lenInfo.BytesConsumed
-    }
-    else {
+    } else {
       $header.Tag = [PgpPacketTag](($headerByte -band 0x3C) -shr 2)
       $lenType = $headerByte -band 0x03
-      
+
       switch ($lenType) {
         0 {
           # 1-byte length
@@ -127,7 +126,7 @@ class PgpPacketHeader {
         }
       }
     }
-    
+
     return $header
   }
 
@@ -171,10 +170,10 @@ class PgpPublicKeyPacket {
 
   static [PgpPublicKeyPacket] Read([byte[]]$data, [bool]$isSubkey = $false) {
     if ($data.Length -lt 1) { throw [ArgumentException]::new("Data too short for public key packet.") }
-    
+
     $v = $data[0]
     $offset = 1
-    
+
     if ($v -eq 4) {
       if ($data.Length -lt 6) { throw [ArgumentException]::new("Data too short for V4 public key.") }
       $ts = ([long]$data[1] -shl 24) -bor ([long]$data[2] -shl 16) -bor ([long]$data[3] -shl 8) -bor [long]$data[4]
@@ -183,8 +182,7 @@ class PgpPublicKeyPacket {
       $material = [byte[]]::new($data.Length - 6)
       [Array]::Copy($data, 6, $material, 0, $material.Length)
       return [PgpPublicKeyPacket]::new($v, $ct, $alg, $material, $isSubkey)
-    }
-    elseif ($v -eq 6) {
+    } elseif ($v -eq 6) {
       if ($data.Length -lt 10) { throw [ArgumentException]::new("Data too short for V6 public key.") }
       $ts = ([long]$data[1] -shl 24) -bor ([long]$data[2] -shl 16) -bor ([long]$data[3] -shl 8) -bor [long]$data[4]
       $ct = [DateTimeOffset]::FromUnixTimeSeconds($ts)
@@ -194,8 +192,7 @@ class PgpPublicKeyPacket {
       $material = [byte[]]::new($keyLen)
       [Array]::Copy($data, 10, $material, 0, $keyLen)
       return [PgpPublicKeyPacket]::new($v, $ct, $alg, $material, $isSubkey)
-    }
-    else {
+    } else {
       throw [NotSupportedException]::new("Unsupported public key version: $v")
     }
   }
@@ -212,8 +209,7 @@ class PgpPublicKeyPacket {
       $res[4] = [byte]($ts -band 0xFF)
       $res[5] = [byte]$this.Algorithm
       [Array]::Copy($this.KeyMaterial, 0, $res, 6, $this.KeyMaterial.Length)
-    }
-    elseif ($this.Version -eq 6) {
+    } elseif ($this.Version -eq 6) {
       $res = [byte[]]::new(10 + $this.KeyMaterial.Length)
       $res[0] = $this.Version
       $ts = [uint32]$this.CreationTime.ToUnixTimeSeconds()
@@ -254,14 +250,14 @@ class PgpSecretKeyPacket {
     # This is complex because we need to parse the public key first, but the public key length is not always known for V4
     # For V6, it is known.
     # For V4, we have to parse the public key material.
-    
+
     $v = $data[0]
     if ($v -eq 4) {
       # Parse V4 Public Key header (6 bytes)
       $ts = ([long]$data[1] -shl 24) -bor ([long]$data[2] -shl 16) -bor ([long]$data[3] -shl 8) -bor [long]$data[4]
       $ct = [DateTimeOffset]::FromUnixTimeSeconds($ts)
       $alg = [PgpPublicKeyAlgorithm]$data[5]
-      
+
       # Now parse MPIs to find where it ends
       $offset = [ref]6
       # This part is algorithm specific. For RSA: n, e
@@ -269,23 +265,22 @@ class PgpSecretKeyPacket {
       if ($alg -eq [PgpPublicKeyAlgorithm]::RsaEncryptOrSign -or $alg -eq [PgpPublicKeyAlgorithm]::RsaEncryptOnly -or $alg -eq [PgpPublicKeyAlgorithm]::RsaSignOnly) {
         [Mpi]::Read($data, $offset) # n
         [Mpi]::Read($data, $offset) # e
-      }
-      else {
+      } else {
         throw [NotSupportedException]::new("Parsing non-RSA V4 secret keys not yet implemented.")
       }
-      
+
       $keyMaterialLen = $offset.Value - $keyMaterialStart
       $material = [byte[]]::new($keyMaterialLen)
       [Array]::Copy($data, $keyMaterialStart, $material, 0, $keyMaterialLen)
       $pubKey = [PgpPublicKeyPacket]::new($v, $ct, $alg, $material, $isSubkey)
-      
+
       $usage = [PgpS2KUsage]$data[$offset.Value]
       $offset.Value++
-      
+
       $cipher = 0
       $spec = $null
       $ivData = [byte[]]::new(0)
-      
+
       if ($usage -ne [PgpS2KUsage]::None) {
         $cipher = $data[$offset.Value]
         $offset.Value++
@@ -302,50 +297,48 @@ class PgpSecretKeyPacket {
       [Array]::Copy($data, $offset.Value, $secretMaterial, 0, $secretMaterialLen)
 
       return [PgpSecretKeyPacket]::new($pubKey, $usage, $cipher, $spec, $ivData, $secretMaterial)
-    }
-    elseif ($v -eq 6) {
+    } elseif ($v -eq 6) {
       # V6 is easier because public key length is in the header
       $ts = ([long]$data[1] -shl 24) -bor ([long]$data[2] -shl 16) -bor ([long]$data[3] -shl 8) -bor [long]$data[4]
       $ct = [DateTimeOffset]::FromUnixTimeSeconds($ts)
       $alg = [PgpPublicKeyAlgorithm]$data[5]
       $pubKeyLen = ([long]$data[6] -shl 24) -bor ([long]$data[7] -shl 16) -bor ([long]$data[8] -shl 8) -bor [long]$data[9]
-      
+
       $material = [byte[]]::new($pubKeyLen)
       [Array]::Copy($data, 10, $material, 0, $pubKeyLen)
       $pubKey = [PgpPublicKeyPacket]::new($v, $ct, $alg, $material, $isSubkey)
-      
+
       $offset = [ref](10 + $pubKeyLen)
       $scalarOctetCount = $data[$offset.Value]
       $offset.Value++
-      
+
       $usage = [PgpS2KUsage]::None
       $cipher = 0
       $spec = $null
       $ivData = [byte[]]::new(0)
-      
+
       if ($scalarOctetCount -gt 0) {
         $usage = [PgpS2KUsage]$data[$offset.Value]
         $offset.Value++
         $cipher = $data[$offset.Value]
         $offset.Value++
-        
+
         # S2K Specifier and IV are within scalarOctetCount
         $spec = [PgpS2KSpecifier]::Read($data, $offset)
-        
+
         # Remainder of scalarOctetCount is IV
         $ivSize = (10 + $pubKeyLen + 1 + $scalarOctetCount) - $offset.Value
         $ivData = [byte[]]::new($ivSize)
         [Array]::Copy($data, $offset.Value, $ivData, 0, $ivSize)
         $offset.Value += $ivSize
       }
-      
+
       $secretMaterialLen = $data.Length - $offset.Value
       $secretMaterial = [byte[]]::new($secretMaterialLen)
       [Array]::Copy($data, $offset.Value, $secretMaterial, 0, $secretMaterialLen)
-      
+
       return [PgpSecretKeyPacket]::new($pubKey, $usage, $cipher, $spec, $ivData, $secretMaterial)
-    }
-    else {
+    } else {
       throw [NotSupportedException]::new("Unsupported secret key version: $v")
     }
   }
@@ -364,7 +357,7 @@ class PgpSecretKeyPacket {
     $pubData = $this.PublicKey.ToArray()
     $resList = [System.Collections.Generic.List[byte]]::new()
     $resList.AddRange($pubData)
-    
+
     if ($this.PublicKey.Version -eq 4) {
       $resList.Add([byte]$this.S2KUsage)
       if ($this.S2KUsage -ne [PgpS2KUsage]::None) {
@@ -372,23 +365,21 @@ class PgpSecretKeyPacket {
         $resList.AddRange($this.S2KSpecifier.Write())
         $resList.AddRange($this.IV)
       }
-    }
-    else {
+    } else {
       if ($this.S2KUsage -eq [PgpS2KUsage]::None) {
         $resList.Add(0)
-      }
-      else {
+      } else {
         $s2kData = [System.Collections.Generic.List[byte]]::new()
         $s2kData.Add([byte]$this.S2KUsage)
         $s2kData.Add($this.CipherAlgorithm)
         $s2kData.AddRange($this.S2KSpecifier.Write())
         $s2kData.AddRange($this.IV)
-        
+
         $resList.Add([byte]$s2kData.Count)
         $resList.AddRange($s2kData)
       }
     }
-    
+
     $resList.AddRange($this.SecretKeyMaterial)
     return $resList.ToArray()
   }
@@ -440,19 +431,19 @@ class PgpLiteralDataPacket {
   [byte[]] ToArray() {
     $nameBytes = [System.Text.Encoding]::UTF8.GetBytes($this.FileName)
     if ($nameBytes.Length -gt 255) { throw [ArgumentException]::new("Filename too long.") }
-    
+
     $res = [byte[]]::new(1 + 1 + $nameBytes.Length + 4 + $this.Data.Length)
     $res[0] = [byte]$this.Format
     $res[1] = [byte]$nameBytes.Length
     [Array]::Copy($nameBytes, 0, $res, 2, $nameBytes.Length)
-    
+
     $tsOffset = 2 + $nameBytes.Length
     $ts = [uint32]$this.Date.ToUnixTimeSeconds()
     $res[$tsOffset] = [byte](($ts -shr 24) -band 0xFF)
     $res[$tsOffset + 1] = [byte](($ts -shr 16) -band 0xFF)
     $res[$tsOffset + 2] = [byte](($ts -shr 8) -band 0xFF)
     $res[$tsOffset + 3] = [byte]($ts -band 0xFF)
-    
+
     [Array]::Copy($this.Data, 0, $res, $tsOffset + 4, $this.Data.Length)
     return $res
   }
