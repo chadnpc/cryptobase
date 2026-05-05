@@ -68,6 +68,7 @@
             }
           }
           if ($PassThru) { Write-Output $results }
+          break
         }
         'Content' {
           Write-Verbose "Protecting content named: $Name"
