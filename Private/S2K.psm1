@@ -5,7 +5,7 @@ using namespace System.Security.Cryptography
 
 using module ./Utilities.psm1
 using module ./PasswordHashing.psm1
-using module ./OpenPgpEnums.psm1
+using module ./Enums.psm1
 
 enum S2KType : byte {
   Simple = 0
