@@ -16,6 +16,7 @@ using namespace System.Security.Cryptography.X509Certificates
 using module ./Enums.psm1
 using module ./Exceptions.psm1
 using module ./ChaCha20.psm1
+using module ./Hkdf.psm1
 
 #Requires -Modules PsModuleBase
 
