@@ -29,7 +29,7 @@ $salt = [System.Text.Encoding]::UTF8.GetBytes("session-salt")
 $info = [System.Text.Encoding]::UTF8.GetBytes("app-context-v1")
 
 # Derive a sub-key
-$subKey = [HKDF]::DeriveKey("SHA256", $masterKey, 32, $salt, $info)
+$subKey = [HkdfCore]::DeriveKey("SHA256", $masterKey, 32, $salt, $info)
 ```
 
 ---
