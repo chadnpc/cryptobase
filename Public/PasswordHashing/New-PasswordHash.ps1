@@ -4,7 +4,7 @@ function New-PasswordHash {
   Hashes a password optimally for secure database storage.
 
   .DESCRIPTION
-  Uses Argon2id parameterization to derive a highly secure string representation of the password that is safe for long-term storage and verification.
+  Uses Argon2id to derive a highly secure string representation of the password that is safe for long-term storage and verification.
 
   .PARAMETER Password
   The plain text password to hash.
@@ -12,6 +12,7 @@ function New-PasswordHash {
   .EXAMPLE
   PS C:\> $hash = New-PasswordHash -Password "SuperSecret123!"
   #>
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
   [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
   [CmdletBinding()]
   [OutputType([string])]
