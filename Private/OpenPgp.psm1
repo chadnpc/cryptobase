@@ -344,13 +344,13 @@ class PgpSecretKeyPacket {
   }
 
   static hidden [int] GetCipherBlockSize([byte]$cipherAlg) {
-    switch ($cipherAlg) {
-      7 { return 16 } # AES-128
-      8 { return 16 } # AES-192
-      9 { return 16 } # AES-256
-      default { return 8 } # legacy ciphers
-    }
-    return 8
+    return $(switch ($cipherAlg) {
+        7 { 16 } # AES-128
+        8 { 16 } # AES-192
+        9 { 16 } # AES-256
+        default { 8 } # legacy ciphers
+      }
+    )
   }
 
   [byte[]] ToArray() {
