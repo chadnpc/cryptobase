@@ -35,7 +35,7 @@ Describe "Integration tests: cryptobase" {
         $plaintext = "Super secret data"
         $protected = $plaintext | cryptobase ProtectData
         $protected.Count | Should BeGreaterThan 0
-        $decryptedBytes = , $protected | cryptobase UnprotectData
+        $decryptedBytes = $protected | cryptobase UnprotectData
         $decryptedText = [System.Text.Encoding]::UTF8.GetString($decryptedBytes)
         $decryptedText | Should Be $plaintext
       }
