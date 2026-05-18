@@ -51,7 +51,7 @@ $encrypted = [CryptoBase]::ProtectData($data, $password)
 
 # Decrypt
 $decrypted = [CryptoBase]::UnprotectData($encrypted, $password)
-[System.Text.Encoding]::UTF8.GetString($decrypted) # "Hello World"
+[System.Text.Encoding]::UTF8.GetString($decrypted) # i.e: you get back "Hello World"
 ```
 
 
@@ -63,6 +63,7 @@ $password = [secureString][System.Net.NetworkCredential]::new("", "my-ultra-secu
 $data = [System.Text.Encoding]::UTF8.GetBytes("Top secret")
 $cascade = [CryptoBase]::ProtectDataCascade($data, $password)
 $plain = [CryptoBase]::UnprotectDataCascade($cascade, $password)
+[system.text.Encoding]::UTF8.GetString($plain) # i.e: you get back "Top secret"
 ```
 
 **Post-Quantum Hybrids**
