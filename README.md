@@ -80,7 +80,8 @@ $hybrid = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientP256.Public
 Standard password hashing for your applications.
 
 ```powershell
-$hash = [BCrypt]::HashPassword('my_secret')
+clihelper.core\Wait-Task "H4sH1N9" { param([string]$secret) return [BCrypt]::HashPassword($secret) } 'my_secret'
+Wait-Task "H4sH1N9" { param([string]$secret) return [BCrypt]::HashPassword($secret) } 'my_secret'
 $isValid = [BCrypt]::Verify('my_secret', $hash) # Returns $true
 ```
 
