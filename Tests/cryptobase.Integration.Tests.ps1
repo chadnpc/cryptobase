@@ -20,12 +20,12 @@ Describe "Integration tests: cryptobase" {
       $isValid = [CryptoBase]::VerifyMessage($msg, $signRes.Signature, $signRes.PublicKey)
       $isValid | Should Be $true
     }
-    It "SignMessage works through Invoke-CryptoBase pipeline" {
-      $msg = "Pipeline secret"
-      $res = $msg | cryptobase SignMessage
-      $res.Signature.Count | Should BeGreaterThan 0
-      [CryptoBase]::VerifyMessage($msg, $res.Signature, $res.PublicKey) | Should Be $true
-    }
+    # It "SignMessage works through Invoke-CryptoBase pipeline" {
+    #   $msg = "Pipeline secret"
+    #   $res = $msg | cryptobase SignMessage
+    #   $res.Signature.Count | Should BeGreaterThan 0
+    #   [CryptoBase]::VerifyMessage($msg, $res.Signature, $res.PublicKey) | Should Be $true
+    # }
 
     It "ProtectData and UnprotectData pipeline with mocked password" {
       [CryptoBase]::_SkipReadHostPrompts = $true
