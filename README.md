@@ -43,7 +43,7 @@ or test the `./BuildOutput/`
 Easily encrypt and decrypt data with a password using the main `[CryptoBase]` class.
 
 ```powershell
-$password = "my-ultra-secure-password"
+$password = [secureString][System.Net.NetworkCredential]::new("", "my-ultra-secure-password").SecurePassword
 $data = [System.Text.Encoding]::UTF8.GetBytes("Hello World")
 
 # Encrypt (uses Argon2id + AES-256-GCM)
@@ -59,7 +59,7 @@ $decrypted = [CryptoBase]::UnprotectData($encrypted, $password)
 Paranoid double-wrap mode with independent keys for AES-256-GCM and XChaCha20-Poly1305.
 
 ```powershell
-$password = "my-ultra-secure-password"
+$password = [secureString][System.Net.NetworkCredential]::new("", "my-ultra-secure-password").SecurePassword
 $data = [System.Text.Encoding]::UTF8.GetBytes("Top secret")
 $cascade = [CryptoBase]::ProtectDataCascade($data, $password)
 $plain = [CryptoBase]::UnprotectDataCascade($cascade, $password)
