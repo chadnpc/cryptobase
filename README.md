@@ -71,8 +71,7 @@ Hybrid encryption that combines NIST P-256 ECDH with ML-KEM encapsulation.
 
 ```powershell
 $recipientP256 = [Curve25519]::GenerateKeyPair()
-$mlKem = [MLKemCore]::new()
-$recipientKem = $mlKem.GenerateKeyPair()
+$recipientKem =  [MLKemCore]::GenerateKeyPair()
 $payload = [System.Text.Encoding]::UTF8.GetBytes("future-proof")
 $hybrid = [CryptoBase]::ProtectDataQuantumHybrid($payload, $recipientP256.PublicKey, $recipientKem.PublicKey)
 ```
